@@ -32,7 +32,7 @@ class ConversationOrchestrator:
         initial_message = f"I want to build {project['name']}, {project['description']}"
         
         # Create initial conversation state
-        from app.models.api_schemas import ConversationState
+        from app.models.agent import ConversationState
         initial_conversation_state = ConversationState(
             session_id=session_id,
             user_id=user_id,

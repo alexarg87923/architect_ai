@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.database import Conversation, Message, Roadmap as RoadmapDB
-from app.models.api_schemas import ConversationState, ChatMessage, Roadmap
+from app.core.database import Conversation, Message, Roadmap as RoadmapDB
+from app.models.agent import ConversationState, ChatMessage, Roadmap
 from typing import Optional
 import json
 from datetime import datetime

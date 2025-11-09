@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.database import User as UserDB
-from app.models.api_schemas import User, UserCreate, UserResponse, LoginRequest
+from app.core.database import User as UserDB
+from app.models.agent import User, UserCreate, UserResponse, LoginRequest
 from typing import Optional
 from datetime import datetime
 import hashlib

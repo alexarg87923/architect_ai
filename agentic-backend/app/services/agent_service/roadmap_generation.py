@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Tuple, Optional
 from openai import AsyncOpenAI
 
-from app.models.api_schemas import (
+from app.models.agent import (
     ProjectSpecification, RoadmapNode, Roadmap, 
     ChatMessage, ConversationState, SubTask, ProjectTag
 )

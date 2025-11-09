@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.models.database import Project as ProjectDB, Task as TaskDB
-from app.models.api_schemas import ProjectCreate, ProjectUpdate, Roadmap, TasksByType, TaskResponse
+from app.core.database import Project as ProjectDB, Task as TaskDB
+from app.models.agent import ProjectCreate, ProjectUpdate, Roadmap, TasksByType, TaskResponse
 from typing import List, Optional
 from datetime import datetime
 import json

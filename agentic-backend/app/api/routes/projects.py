@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.models.api_schemas import ProjectCreate, ProjectUpdate, ProjectResponse, Roadmap, TaskCreate, TaskUpdate, TaskResponse, TasksByType
+from app.models.agent import ProjectCreate, ProjectUpdate, ProjectResponse, Roadmap, TaskCreate, TaskUpdate, TaskResponse, TasksByType
 from app.services.project_service import ProjectService
 from app.services.task_service import TaskService
 from app.services.user_service import UserService
