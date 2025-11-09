@@ -4,15 +4,18 @@ import { HiOutlineMap, HiOutlineMoon, HiDotsHorizontal } from 'react-icons/hi';
 import NewProjectModal from './NewProjectModal';
 import ProjectMenuModal from './ProjectMenuModal';
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
+import { useProjects } from '../hooks/useProjects';
+import { useSelectedProject } from '../contexts/ProjectContext';
 
 // *** Need to save the theme_state to localStorage
 
 const Sidebar = ({ className }) => {
-  // Mock data and hooks - you'll need to implement these
-  const [projects, setProjects] = useState([
-    { id: 1, name: 'Sample Project'}, { id: 2, name: 'Sample Project 2'}
-  ]);
-  const [currentProject, setCurrentProject] = useState(null);
+  // Use useProjects for project data management
+  const { projects, createProject, updateProject, deleteProject } = useProjects();
+  
+  // Use context for selected project state
+  const { selectedProject, selectProject, clearSelection } = useSelectedProject();
+
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Load sidebar state from localStorage
@@ -38,22 +41,6 @@ const Sidebar = ({ className }) => {
     }
   }, [isCollapsed]);
 
-  const createProject = (name, description) => {
-    const newProject = {
-      id: Date.now(),
-      name,
-      description,
-      status: 'draft',
-      updatedAt: new Date()
-    };
-    setProjects([...projects, newProject]);
-  };
-
-  const selectProject = (projectId) => {
-    const project = projects.find(p => p.id === projectId);
-    setCurrentProject(project);
-  };
-
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -73,15 +60,11 @@ const Sidebar = ({ className }) => {
   };
 
   const handleRename = (projectId, newName) => {
-    setProjects(projects.map(p => 
-      p.id === projectId 
-        ? { ...p, name: newName }
-        : p
-    ));
+    updateProject(projectId, { name: newName });
   };
 
   const startRename = (project) => {
-    setCurrentProject(project); // Select the project being renamed
+    selectProject(project); // Select the project being renamed using context
     setEditingProject(project.id);
     setEditingName(project.name);
     setOriginalName(project.name); // Store original name for reverting
@@ -112,9 +95,10 @@ const Sidebar = ({ className }) => {
   };
 
   const handleDelete = (projectId) => {
-    setProjects(projects.filter(p => p.id !== projectId));
-    if (currentProject?.id === projectId) {
-      setCurrentProject(null);
+    deleteProject(projectId); // Use the hook's delete function
+    // Clear selection if the deleted project was selected
+    if (selectedProject?.id === projectId) {
+      clearSelection();
     }
   };
 
@@ -183,10 +167,10 @@ const Sidebar = ({ className }) => {
                     {projects.map((project) => (
                     <div
                         key={project.id}
-                        onClick={() => selectProject(project.id)}
+                        onClick={() => selectProject(project)}
                         onContextMenu={(e) => handleRightClick(e, project)}
                         className={`px-3 py-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 border ${
-                        currentProject?.id === project.id 
+                        selectedProject?.id === project.id 
                             ? 'border-blue-200 bg-blue-50' 
                             : 'border-transparent'
                         }`}

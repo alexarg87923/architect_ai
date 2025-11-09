@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,38 +12,36 @@ import '@xyflow/react/dist/style.css';
 import { RoadmapNode } from './nodes/RoadmapNode';
 import { StartNode } from './nodes/StartNode';
 
-const nodeTypes = {
-  roadmap: RoadmapNode,
-  start: StartNode,
-};
+const nodeTypes = { roadmap: RoadmapNode, start: StartNode};
+
 
 export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChange: onRoadmapNodesChange }) => {
+    
+  
   const initialNodes = useMemo(() => {
-    if (!hasProject) {
-      return [
-        {
-          id: 'start-node',
-          type: 'start',
-          position: { x: 0, y: 100 },
-          data: { label: 'Start Your New Project' },
-          deletable: false,
-        }
-      ];
-    }
 
-    return roadmapNodes.map((roadmapNode, index) => ({
-      id: roadmapNode.id,
-      type: 'roadmap',
-      position: { 
-        x: 100 + (index % 3) * 300, 
-        y: 100 + Math.floor(index / 3) * 200 
-      },
-      data: roadmapNode,
-    }));
-  }, [hasProject, roadmapNodes]);
+    const startNodeLabel = `Get Started with - ${projectName || 'Your Project'}`;
+    return [
+        {
+            id: 'start-node',
+            type: 'start',
+            position: { x: 0, y: 100 },
+            data: { label: startNodeLabel },
+            deletable: false,
+        }
+    ];
+
+    // *** Need to add logic for adding roadmap nodes ***
+
+  }, [hasProject, projectName, roadmapNodes]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Update nodes when initialNodes changes
+  useEffect(() => {
+    setNodes(initialNodes);
+  }, [initialNodes]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -60,7 +58,6 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
-        fitView={hasProject} // Only fit view when there are actual project nodes
         fitViewOptions={{
           padding: 0.2,
           maxZoom: 1.2,
