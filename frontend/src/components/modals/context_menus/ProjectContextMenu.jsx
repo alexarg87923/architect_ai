@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { HiMiniPencilSquare } from "react-icons/hi2";
 import { HiOutlineTrash } from "react-icons/hi";
 
-const ProjectMenuModal = ({ isOpen, x, y, project, onClose, onRename, onDelete }) => {
+const ProjectContextMenu = ({ isOpen, x, y, project, onClose, onRename, onDelete }) => {
   const handleRename = () => {
     onRename(project);
     onClose();
@@ -56,4 +56,4 @@ const ProjectMenuModal = ({ isOpen, x, y, project, onClose, onRename, onDelete }
   );
 };
 
-export default ProjectMenuModal;
+export default ProjectContextMenu;

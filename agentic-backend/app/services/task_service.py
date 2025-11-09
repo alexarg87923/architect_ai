@@ -20,11 +20,16 @@ class TaskService:
         db.refresh(db_task)
         return db_task
     
-    def get_project_tasks(self, db: Session, project_id: int) -> Dict[str, List[TaskDB]]:
+    def get_project_tasks(self, db: Session, project_id: int, include_archived: bool = False) -> Dict[str, List[TaskDB]]:
         """Get all tasks for a project, grouped by type"""
-        tasks = db.query(TaskDB).filter(
-            TaskDB.project_id == project_id
-        ).order_by(TaskDB.created_at.asc()).all()
+        
+        query = db.query(TaskDB).filter(TaskDB.project_id == project_id)
+        
+        if not include_archived:
+            # Filter out archived tasks - only show tasks where archive is NOT True
+            query = query.filter(TaskDB.archive != True)
+        
+        tasks = query.order_by(TaskDB.created_at.asc()).all()
         
         # Group tasks by type
         tasks_by_type = {
@@ -51,13 +56,14 @@ class TaskService:
         if not db_task:
             return None
         
-        # Update fields if provided
         if task_update.text is not None:
             db_task.text = task_update.text
         if task_update.completed is not None:
             db_task.completed = task_update.completed
         if task_update.task_type is not None:
             db_task.task_type = task_update.task_type
+        if task_update.archive is not None:
+            db_task.archive = task_update.archive
         
         db_task.updated_at = datetime.utcnow()
         db.commit()
@@ -76,4 +82,16 @@ class TaskService:
     
     def task_exists(self, db: Session, task_id: int, project_id: int) -> bool:
         """Check if a task exists for a project"""
-        return self.get_task(db, task_id, project_id) is not None 
+        return self.get_task(db, task_id, project_id) is not None
+    
+    def archive_task(self, db: Session, task_id: int, project_id: int) -> bool:
+        """Will set the archive flag to true in the db"""
+        db_task = self.get_task(db, task_id, project_id)
+        
+        if not db_task:
+            return False
+        
+        db_task.archive = True
+        db_task.updated_at = datetime.utcnow()
+        db.commit()
+        return True

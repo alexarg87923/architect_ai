@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { HiDotsHorizontal } from 'react-icons/hi';
+import TaskSectionContextMenu from './modals/context_menus/TaskSectionContextMenu';
 
 function TaskItem({ task, onToggle, sectionKey, editingTaskId, editingText, setEditingText, cancelRename, saveRename, setContextMenu }) {
     const inputRef = useRef(null);
@@ -66,28 +67,31 @@ function TaskItem({ task, onToggle, sectionKey, editingTaskId, editingText, setE
     );
 }
 
-const TaskSection = ({ 
-    title, 
-    placeholderText, 
-    sectionKey, 
-    tasks, 
-    icon: Icon, 
-    color = "blue", 
-    editingTaskId, 
-    editingText, 
-    editingSectionKey, 
-    setEditingText, 
-    cancelRename, 
-    saveRename, 
+const TaskSection = ({
+    title,
+    placeholderText,
+    sectionKey,
+    tasks,
+    icon: Icon,
+    color = "blue",
+    editingTaskId,
+    editingText,
+    editingSectionKey,
+    setEditingText,
+    cancelRename,
+    saveRename,
     setContextMenu,
     onAddTask,
     onToggleTask,
-    loading = false
+    onViewArchiveSection,
+    loading = false,
 }) => {
     const [adding, setAdding] = useState(false);
     const [input, setInput] = useState("");
+    const [sectionMenu, setSectionMenu] = useState({ show: false });
     const inputRef = useRef(null);
     const addBoxRef = useRef(null);
+    const dotsRef = useRef(null);
 
     useEffect(() => {
         if (adding && inputRef.current) inputRef.current.focus();
@@ -117,6 +121,21 @@ const TaskSection = ({
         }
     };
 
+    const handleSectionMenuClick = (e) => {
+        e.preventDefault();
+        setSectionMenu({ show: true });
+    };
+
+    const closeSectionMenu = () => {
+        setSectionMenu({ show: false });
+    };
+
+    const handleViewArchiveSection = () => {
+        if (onViewArchiveSection) {
+            onViewArchiveSection(sectionKey);
+        }
+    };
+
     return (
         <div className="mb-6">
             <div className={`flex justify-between mb-3 ml-2 text-${color}-600 dark:text-${color}-400`}>
@@ -124,7 +143,11 @@ const TaskSection = ({
                     <Icon className="w-4 h-4" />
                     <h3 className="font-semibold text-sm">{title}</h3>
                 </div>
-                <HiDotsHorizontal className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#3A3A3A] p-0.5 rounded-sm" />
+                <HiDotsHorizontal
+                    ref={dotsRef}
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#3A3A3A] p-0.5 rounded-sm"
+                    onClick={handleSectionMenuClick}
+                />
             </div>
             {adding ? (
                 <div ref={addBoxRef} className="flex items-center space-x-2 p-2 w-full bg-gray-50 dark:bg-[#3A3A3A] rounded-lg">
@@ -152,11 +175,12 @@ const TaskSection = ({
                 </button>
             )}
             <div className='pt-2'>
+                {/* Show regular tasks */}
                 {(tasks || []).map(task => (
                     <TaskItem
                         key={`${task.id}-${editingTaskId === task.id ? 'editing' : 'normal'}`}
                         task={task}
-                        onToggle={onToggleTask}
+                        onToggle={(task) => onToggleTask(sectionKey, task)}
                         sectionKey={sectionKey}
                         editingTaskId={editingSectionKey === sectionKey ? editingTaskId : null}
                         editingText={editingText}
@@ -166,7 +190,21 @@ const TaskSection = ({
                         setContextMenu={setContextMenu}
                     />
                 ))}
+
+                {/* Show message when no tasks */}
+                {(!tasks || tasks.length === 0) && (
+                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                        No active tasks
+                    </div>
+                )}
             </div>
+
+            <TaskSectionContextMenu
+                isOpen={sectionMenu.show}
+                onClose={closeSectionMenu}
+                onViewArchive={handleViewArchiveSection}
+                anchorRef={dotsRef}
+            />
         </div>
     );
 };

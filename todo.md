@@ -5,13 +5,7 @@
     - Node completion times should be much shorter, check if it is the LLM script instructions that is causing this.
     - Perhaps the AI doesn't know that this is for personal projects that will usually last between 1 week to 2-3 months.
 
-2. Connect the agent to the frontend and make a button which runs the "LLM user" script but on the frontend to simulate the interaction. Have a few second pause between request to response cycle (perhaps the LLM just populates the input field and I send it).
-
 3. Add rate limiting to the backend.
-
-4. Add more "mock projects" with different descriptions to see how to the agent handles different types of projects (not only TaskFlow Pro) 
-
-5. Add modular popup on the left of the screen (support general todos (checklists), notes, etc.)
 
 6. Implement progress tracking functionality
     - Add ability to mark roadmap nodes as completed

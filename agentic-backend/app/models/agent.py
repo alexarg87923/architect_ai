@@ -176,6 +176,7 @@ class TaskUpdate(BaseModel):
     text: Optional[str] = None
     completed: Optional[bool] = None
     task_type: Optional[str] = None
+    archive: Optional[bool] = None
 
 class Task(TaskBase):
     """Complete task model with ID and timestamps"""
@@ -196,6 +197,7 @@ class TaskResponse(BaseModel):
     task_type: str
     created_at: datetime
     updated_at: datetime
+    archive: Optional[bool] = False
 
 class TasksByType(BaseModel):
     """Model for grouping tasks by type"""

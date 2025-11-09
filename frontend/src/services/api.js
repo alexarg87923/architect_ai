@@ -399,6 +399,29 @@ class ApiClient {
   hasRoadmap(conversationState) {
     return conversationState?.current_roadmap !== null;
   }
+
+  async archiveTask(projectId, taskId){
+    const userId = localStorage.getItem('user_id');
+
+    if (!userId){
+      throw new Error('User not authenticated');
+    }
+    return this.request(`/api/projects/${projectId}/tasks/${taskId}/archive?user_id=${userId}`, {
+    method: 'PATCH'
+  });
+  }
+  async getArchivedTasks(projectId) {
+  const userId = localStorage.getItem('user_id');
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+
+  return this.request(`/api/projects/${projectId}/tasks/archived?user_id=${userId}`, {
+    method: 'GET'
+  });
+}
+
+
 }
 
 export default new ApiClient();

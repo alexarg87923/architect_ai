@@ -48,12 +48,14 @@ export const useProjects = () => {
           "daily-todos": project.tasks.daily_todos.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           })),
           "your-ideas": project.tasks.your_ideas.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           }))
         } : {
           "daily-todos": [],
@@ -96,12 +98,14 @@ export const useProjects = () => {
           "daily-todos": newProject.tasks.daily_todos.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           })),
           "your-ideas": newProject.tasks.your_ideas.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           }))
         } : {
           "daily-todos": [],
@@ -149,12 +153,14 @@ export const useProjects = () => {
           "daily-todos": updatedProject.tasks.daily_todos.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           })),
           "your-ideas": updatedProject.tasks.your_ideas.map(task => ({
             id: task.id,
             text: task.text,
-            completed: task.completed
+            completed: task.completed,
+            archive: task.archive || false
           }))
         } : {
           "daily-todos": [],
@@ -237,7 +243,9 @@ export const useProjects = () => {
                 [taskType]: [...project.tasks[taskType], {
                   id: newTask.id,
                   text: newTask.text,
-                  completed: newTask.completed
+                  completed: newTask.completed,
+                  archive: newTask.archive || false
+
                 }]
               }
             };
@@ -255,7 +263,8 @@ export const useProjects = () => {
             [taskType]: [...currentProject.tasks[taskType], {
               id: newTask.id,
               text: newTask.text,
-              completed: newTask.completed
+              completed: newTask.completed,
+              archive: newTask.archive || false
             }]
           }
         };
@@ -271,7 +280,9 @@ export const useProjects = () => {
             [taskType]: [...selectedProject.tasks[taskType], {
               id: newTask.id,
               text: newTask.text,
-              completed: newTask.completed
+              completed: newTask.completed,
+              archive: newTask.archive || false
+
             }]
           }
         };

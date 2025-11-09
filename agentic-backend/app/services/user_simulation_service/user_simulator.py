@@ -17,7 +17,7 @@ class UserSimulator:
             
             if groq_key:
                 self.client = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1")
-                self.model = "llama3-70b-8192"
+                self.model = "llama-3.3-70b-versatile"
                 self.use_llm = True
                 print(f"✅ Using GROQ for user simulation")
             elif openai_key:

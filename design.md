@@ -322,20 +322,6 @@ GET  /api/agent/health            # Service health check
 4. **Session Persistence**: Database-backed conversation and roadmap storage
 5. **Multi-LLM Support**: OpenAI and GROQ integration with fallbacks
 
-### 🚧 Current Limitations
-1. **No ReactFlow Frontend**: Roadmap visualization not yet implemented
-2. **No User Authentication**: Single-session usage only
-3. **No Project Templates**: Each roadmap generated from scratch
-4. **No Progress Tracking**: Cannot mark nodes/subtasks as complete
-5. **No Export Features**: Cannot export roadmaps to external formats
-
-### 🎯 Immediate Next Steps
-1. **Implement ReactFlow Visualization**: Interactive roadmap display
-2. **Build Chat Interface**: Real-time conversation UI
-3. **Add Session Management**: Frontend session persistence
-4. **Create Node Interaction**: Click to expand, edit, and modify nodes
-5. **Add Progress Indicators**: Visual completion tracking
-
 ## Quality Metrics
 
 ### Performance Targets

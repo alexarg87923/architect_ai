@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaChevronLeft, FaChevronRight, FaLightbulb } from 'react-icons/fa';
 import { PiCoffeeFill } from "react-icons/pi";
-import SmartTabItemModal from './modals/SmartTabItemModal';
+import TaskContextMenu from './modals/context_menus/TaskContextMenu';
 import TaskSection from './TaskSection';
+import ArchivedTasksModal from './modals/ArchivedTasksModal';
 import { useProjects } from '../hooks/useProjects';
-
+import ApiClient from '../services/api';
 const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
     const [isTaskCollapsed, setIsTaskCollapsed] = useState(() => {
         try {
@@ -35,7 +36,12 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
     // Update tasks when selected project changes
     useEffect(() => {
         if (selectedProject && selectedProject.tasks) {
-            setTasks(selectedProject.tasks);
+            // Filter out archived tasks when setting local state
+            const filteredTasks = {
+                "daily-todos": selectedProject.tasks["daily-todos"].filter(task => !task.archive),
+                "your-ideas": selectedProject.tasks["your-ideas"].filter(task => !task.archive)
+            };
+            setTasks(filteredTasks);
         } else {
             setTasks({
                 "daily-todos": [],
@@ -49,6 +55,18 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
     const [editingText, setEditingText] = useState("");
     const [editingSectionKey, setEditingSectionKey] = useState(null);
 
+    const [archivedTasks, setArchivedTasks] = useState({
+        "daily-todos": [],
+        "your-ideas": []
+    });
+
+    // Archive modal state
+    const [archiveModal, setArchiveModal] = useState({
+        isOpen: false,
+        sectionKey: null,
+        sectionTitle: ''
+    });
+
     const cancelRename = () => {
         setEditingTaskId(null);
         setEditingText("");
@@ -57,7 +75,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
     const saveRename = async (sectionKey, task) => {
         if (!selectedProject) return;
-        
+
         try {
             await updateTask(selectedProject.id, task.id, { text: editingText });
             // Update local state immediately after successful API call
@@ -84,7 +102,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
     const handleDelete = async (sectionKey, task) => {
         if (!selectedProject) return;
-        
+
         try {
             await deleteTask(selectedProject.id, task.id, sectionKey);
             // Update local state immediately after successful API call
@@ -100,7 +118,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
     const handleAddTask = async (sectionKey, text) => {
         if (!selectedProject || !text.trim()) return;
-        
+
         try {
             const newTask = await createTask(selectedProject.id, text.trim(), sectionKey);
             // Update local state immediately after successful API call
@@ -119,13 +137,13 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
     const handleToggleTask = async (sectionKey, task) => {
         if (!selectedProject) return;
-        
+
         try {
             await updateTask(selectedProject.id, task.id, { completed: !task.completed });
             // Update local state immediately after successful API call
             setTasks(prev => ({
                 ...prev,
-                [sectionKey]: prev[sectionKey].map(t => 
+                [sectionKey]: prev[sectionKey].map(t =>
                     t.id === task.id ? { ...t, completed: !t.completed } : t
                 )
             }));
@@ -134,12 +152,114 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
         }
     };
 
+    const handleViewArchiveSection = async (sectionKey) => {
+        if (!selectedProject) return;
+
+        try {
+            // Load archived tasks if not already loaded
+            if (archivedTasks[sectionKey].length === 0) {
+                const archived = await ApiClient.getArchivedTasks(selectedProject.id);
+                setArchivedTasks({
+                    "daily-todos": archived.daily_todos || [],
+                    "your-ideas": archived.your_ideas || []
+                });
+            }
+
+            // Open the archive modal
+            const sectionTitles = {
+                "daily-todos": "Today's Todos",
+                "your-ideas": "Your Ideas"
+            };
+            
+            setArchiveModal({
+                isOpen: true,
+                sectionKey,
+                sectionTitle: sectionTitles[sectionKey] || sectionKey
+            });
+        } catch (error) {
+            console.error('Failed to load archived tasks:', error);
+        }
+    };
+
+    const closeArchiveModal = () => {
+        setArchiveModal({
+            isOpen: false,
+            sectionKey: null,
+            sectionTitle: ''
+        });
+    };
+
+    const handleDeleteArchivedTask = async (task) => {
+        if (!selectedProject || !archiveModal.sectionKey) return;
+        
+        try {
+            await deleteTask(selectedProject.id, task.id, archiveModal.sectionKey);
+            
+            // Remove from archived tasks
+            setArchivedTasks(prev => ({
+                ...prev,
+                [archiveModal.sectionKey]: prev[archiveModal.sectionKey].filter(t => t.id !== task.id)
+            }));
+        } catch (error) {
+            console.error('Failed to delete archived task:', error);
+        }
+    };
+
+    const handleUnarchiveTask = async (task) => {
+        if (!selectedProject || !archiveModal.sectionKey) return;
+        
+        try {
+            // Update task to unarchive it
+            await updateTask(selectedProject.id, task.id, { archive: false });
+            
+            // Remove from archived tasks
+            setArchivedTasks(prev => ({
+                ...prev,
+                [archiveModal.sectionKey]: prev[archiveModal.sectionKey].filter(t => t.id !== task.id)
+            }));
+            
+            // Add back to active tasks
+            setTasks(prev => ({
+                ...prev,
+                [archiveModal.sectionKey]: [...prev[archiveModal.sectionKey], task]
+            }));
+        } catch (error) {
+            console.error('Failed to unarchive task:', error);
+        }
+    };
+
+    const handleArchive = async (sectionKey, task) => {
+        if (!selectedProject) {
+            return;
+        }
+        try {
+
+            await updateTask(selectedProject.id, task.id, { archive: true });
+
+            // Remove from active tasks
+            setTasks(prev => ({
+                ...prev,
+                [sectionKey]: prev[sectionKey].filter(t => t.id !== task.id)
+            }));
+
+            // Add to archived tasks
+            setArchivedTasks(prev => ({
+                ...prev,
+                [sectionKey]: [...(prev[sectionKey] || []), { ...task, archive: true }]
+            }));
+
+            closeContextMenu();
+        } catch (error) {
+            console.error('Failed to archive task:', error);
+        }
+    };
+
     return (
         <div className="relative">
             {/* Collapsed Strip */}
             {isTaskCollapsed && (
                 isSidebarCollapsed ? (
-                    <div 
+                    <div
                         onClick={() => setIsTaskCollapsed(false)}
                         className="fixed top-20 left-0 z-40 rounded-r-lg shadow-lg bg-white dark:bg-[#232324] hover:bg-gray-50 dark:hover:bg-[#3A3A3A] border-r border-b border-t border-gray-200 dark:border-[#3C3C3C] w-5 h-[80vh] transition-colors flex items-center justify-center"
                     >
@@ -164,7 +284,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                             className="fixed top-20 left-0 inset-0 bg-black/50 z-20 md:hidden"
                             onClick={() => setIsTaskCollapsed(true)}
                         />
-                        
+
                         {/* Task Panel */}
                         <div className="fixed top-20 left-0 z-40 w-80 h-[80vh] rounded-r-lg bg-white dark:bg-[#2a2a2a] border-r border-b border-t border-gray-200 dark:border-[#3C3C3C] overflow-y-auto">
                             {/* Header */}
@@ -182,7 +302,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
                             {/* Content */}
                             <div className="p-4">
-                                {/* Todos Section */}      
+                                {/* Todos Section */}
                                 <TaskSection
                                     title="Today's Todos"
                                     placeholderText="Add todos here"
@@ -200,6 +320,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     onAddTask={handleAddTask}
                                     onToggleTask={handleToggleTask}
                                     loading={loading}
+                                    onViewArchiveSection={handleViewArchiveSection}
                                 />
 
                                 {/* Ideas Section */}
@@ -220,6 +341,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     onAddTask={handleAddTask}
                                     onToggleTask={handleToggleTask}
                                     loading={loading}
+                                    onViewArchiveSection={handleViewArchiveSection}
                                 />
                             </div>
                         </div>
@@ -231,7 +353,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                             className="fixed inset-0 bg-black/50 z-20 md:hidden"
                             onClick={() => setIsTaskCollapsed(true)}
                         />
-                        
+
                         {/* Task Panel */}
                         <div className="w-80 h-full bg-white dark:bg-[#2a2a2a] border-r border-gray-200 dark:border-[#3C3C3C] overflow-y-auto">
                             {/* Header */}
@@ -256,7 +378,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     </div>
                                 )}
 
-                                {/* Todos Section */}      
+                                {/* Todos Section */}
                                 <TaskSection
                                     title="Today's Todos"
                                     placeholderText="Add todos here"
@@ -273,6 +395,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     setContextMenu={setContextMenu}
                                     onAddTask={handleAddTask}
                                     onToggleTask={handleToggleTask}
+                                    onViewArchiveSection={handleViewArchiveSection}
                                     loading={loading}
                                 />
 
@@ -293,6 +416,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     setContextMenu={setContextMenu}
                                     onAddTask={handleAddTask}
                                     onToggleTask={handleToggleTask}
+                                    onViewArchiveSection={handleViewArchiveSection}
                                     loading={loading}
                                 />
                             </div>
@@ -300,7 +424,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                     </>
                 )
             )}
-            <SmartTabItemModal
+            <TaskContextMenu
                 isOpen={contextMenu.show}
                 x={contextMenu.x}
                 y={contextMenu.y}
@@ -309,6 +433,17 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                 onClose={closeContextMenu}
                 onRename={handleRename}
                 onDelete={handleDelete}
+                onArchive={handleArchive}
+            />
+            
+            {/* Archive Tasks Modal */}
+            <ArchivedTasksModal
+                isOpen={archiveModal.isOpen}
+                onClose={closeArchiveModal}
+                archivedTasks={archiveModal.sectionKey ? archivedTasks[archiveModal.sectionKey] : []}
+                sectionTitle={archiveModal.sectionTitle}
+                onDelete={handleDeleteArchivedTask}
+                onUnarchive={handleUnarchiveTask}
             />
         </div>
     );

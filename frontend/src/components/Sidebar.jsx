@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiFolder, FiUser } from 'react-icons/fi';
 import { HiOutlineMap, HiOutlineMoon, HiDotsHorizontal, HiOutlineSun } from 'react-icons/hi';
 import NewProjectModal from './modals/NewProjectModal';
-import ProjectMenuModal from './modals/ProjectMenuModal';
-import ProfileMenuModal from './modals/ProfileMenuModal';
+import ProjectContextMenu from './modals/context_menus/ProjectContextMenu';
+import ProfileContextMenu from './modals/context_menus/ProfileContextMenu';
 import SettingsModal from './modals/SettingsModal';
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import { useProjects } from '../hooks/useProjects';
@@ -243,9 +243,8 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
                     </div>
 
                     {/* Profile Menu Modal */}
-                    <ProfileMenuModal 
+                    <ProfileContextMenu 
                         isOpen={showUserMenu}
-                        user={user}
                         onClose={closeUserMenu}
                         onLogout={handleLogout}
                         onOpenSettings={openSettings}
@@ -255,7 +254,7 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
         </div>
       )}
 
-      <ProjectMenuModal 
+      <ProjectContextMenu 
         isOpen={contextMenu.show}
         x={contextMenu.x}
         y={contextMenu.y}

@@ -26,17 +26,13 @@ async def create_project(
 ):
     """Create a new project for the authenticated user"""
     try:
-        # Verify user exists
         if not user_service.user_exists_by_id(db, user_id):
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Create project
         db_project = project_service.create_project(db, project, user_id)
         
-        # Get tasks for this project (including the default tasks that were created)
         tasks_by_type = task_service.get_project_tasks(db, db_project.id)
         
-        # Convert tasks to response format
         tasks_response = TasksByType(
             daily_todos=[TaskResponse(
                 id=task.id,
@@ -45,7 +41,8 @@ async def create_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["daily-todos"]],
             your_ideas=[TaskResponse(
                 id=task.id,
@@ -54,18 +51,18 @@ async def create_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["your-ideas"]]
         )
         
-        # Convert to response format
         return ProjectResponse(
             id=db_project.id,
             name=db_project.name,
             description=db_project.description,
             status=db_project.status,
-            roadmap_data=None,  # New projects start with no roadmap
-            tasks=tasks_response,  # Include the default tasks
+            roadmap_data=None,
+            tasks=tasks_response,
             created_at=db_project.created_at,
             updated_at=db_project.updated_at
         )
@@ -80,20 +77,15 @@ async def get_user_projects(
 ):
     """Get all projects for the authenticated user"""
     try:
-        # Verify user exists
         if not user_service.user_exists_by_id(db, user_id):
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Get projects
         projects = project_service.get_user_projects(db, user_id)
         
-        # Convert to response format with tasks
         response_projects = []
         for project in projects:
-            # Get tasks for this project
             tasks_by_type = task_service.get_project_tasks(db, project.id)
             
-            # Convert tasks to response format
             tasks_response = TasksByType(
                 daily_todos=[TaskResponse(
                     id=task.id,
@@ -102,7 +94,8 @@ async def get_user_projects(
                     completed=task.completed,
                     task_type=task.task_type,
                     created_at=task.created_at,
-                    updated_at=task.updated_at
+                    updated_at=task.updated_at,
+                    archive=task.archive or False,
                 ) for task in tasks_by_type["daily-todos"]],
                 your_ideas=[TaskResponse(
                     id=task.id,
@@ -111,7 +104,8 @@ async def get_user_projects(
                     completed=task.completed,
                     task_type=task.task_type,
                     created_at=task.created_at,
-                    updated_at=task.updated_at
+                    updated_at=task.updated_at,
+                    archive=task.archive or False,
                 ) for task in tasks_by_type["your-ideas"]]
             )
             
@@ -143,10 +137,8 @@ async def get_project(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Get tasks for this project
         tasks_by_type = task_service.get_project_tasks(db, project.id)
         
-        # Convert tasks to response format
         tasks_response = TasksByType(
             daily_todos=[TaskResponse(
                 id=task.id,
@@ -155,7 +147,8 @@ async def get_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["daily-todos"]],
             your_ideas=[TaskResponse(
                 id=task.id,
@@ -164,7 +157,8 @@ async def get_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["your-ideas"]]
         )
         
@@ -195,10 +189,8 @@ async def update_project(
         if not updated_project:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Get tasks for this project
         tasks_by_type = task_service.get_project_tasks(db, updated_project.id)
         
-        # Convert tasks to response format
         tasks_response = TasksByType(
             daily_todos=[TaskResponse(
                 id=task.id,
@@ -207,7 +199,8 @@ async def update_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["daily-todos"]],
             your_ideas=[TaskResponse(
                 id=task.id,
@@ -216,7 +209,8 @@ async def update_project(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["your-ideas"]]
         )
         
@@ -264,10 +258,8 @@ async def update_project_roadmap(
         if not updated_project:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Get tasks for this project
         tasks_by_type = task_service.get_project_tasks(db, updated_project.id)
         
-        # Convert tasks to response format
         tasks_response = TasksByType(
             daily_todos=[TaskResponse(
                 id=task.id,
@@ -276,7 +268,8 @@ async def update_project_roadmap(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["daily-todos"]],
             your_ideas=[TaskResponse(
                 id=task.id,
@@ -285,7 +278,8 @@ async def update_project_roadmap(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["your-ideas"]]
         )
         
@@ -303,7 +297,6 @@ async def update_project_roadmap(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating project roadmap: {str(e)}")
 
-# Task endpoints
 @router.post("/projects/{project_id}/tasks", response_model=TaskResponse)
 async def create_task(
     project_id: int,
@@ -313,15 +306,12 @@ async def create_task(
 ):
     """Create a new task for a project"""
     try:
-        # Verify project exists and belongs to user
         if not project_service.project_exists(db, project_id, user_id):
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Validate task type
         if task.task_type not in ["daily-todos", "your-ideas"]:
             raise HTTPException(status_code=400, detail="Task type must be 'daily-todos' or 'your-ideas'")
         
-        # Create task
         db_task = task_service.create_task(db, task, project_id)
         
         return TaskResponse(
@@ -331,7 +321,8 @@ async def create_task(
             completed=db_task.completed,
             task_type=db_task.task_type,
             created_at=db_task.created_at,
-            updated_at=db_task.updated_at
+            updated_at=db_task.updated_at,
+            archive=False,
         )
         
     except Exception as e:
@@ -347,11 +338,9 @@ async def update_task(
 ):
     """Update a task"""
     try:
-        # Verify project exists and belongs to user
         if not project_service.project_exists(db, project_id, user_id):
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Update task
         updated_task = task_service.update_task(db, task_id, project_id, task_update)
         if not updated_task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -363,7 +352,8 @@ async def update_task(
             completed=updated_task.completed,
             task_type=updated_task.task_type,
             created_at=updated_task.created_at,
-            updated_at=updated_task.updated_at
+            updated_at=updated_task.updated_at,
+            archive=updated_task.archive or False,
         )
         
     except Exception as e:
@@ -378,11 +368,9 @@ async def delete_task(
 ):
     """Delete a task"""
     try:
-        # Verify project exists and belongs to user
         if not project_service.project_exists(db, project_id, user_id):
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Delete task
         success = task_service.delete_task(db, task_id, project_id)
         if not success:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -400,14 +388,11 @@ async def get_project_tasks(
 ):
     """Get all tasks for a project"""
     try:
-        # Verify project exists and belongs to user
         if not project_service.project_exists(db, project_id, user_id):
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Get tasks
         tasks_by_type = task_service.get_project_tasks(db, project_id)
         
-        # Convert to response format
         return TasksByType(
             daily_todos=[TaskResponse(
                 id=task.id,
@@ -416,7 +401,8 @@ async def get_project_tasks(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["daily-todos"]],
             your_ideas=[TaskResponse(
                 id=task.id,
@@ -425,9 +411,72 @@ async def get_project_tasks(
                 completed=task.completed,
                 task_type=task.task_type,
                 created_at=task.created_at,
-                updated_at=task.updated_at
+                updated_at=task.updated_at,
+                archive=task.archive or False,
             ) for task in tasks_by_type["your-ideas"]]
         )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching tasks: {str(e)}")
+
+@router.patch("/projects/{project_id}/tasks/{task_id}/archive")    
+async def archive_task(
+    project_id: int,
+    task_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Archive a task"""
+    try:
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        success = task_service.archive_task(db, task_id, project_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return {"message": f"Task {task_id} archived successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error archiving task: {str(e)}")
+    
+@router.get("/projects/{project_id}/tasks/archived")
+async def get_archived_tasks(
+    project_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get archived tasks for a project""" 
+    try:
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        all_tasks = task_service.get_project_tasks(db, project_id, include_archived=True)
+
+        archived_tasks = {
+            "daily-todos": [task for task in all_tasks["daily-todos"] if task.archive],
+            "your-ideas": [task for task in all_tasks["your-ideas"] if task.archive]
+        }
+
+        return TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at,
+                archive=task.archive or False,
+            ) for task in archived_tasks["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at,
+                archive=task.archive or False,
+            ) for task in archived_tasks["your-ideas"]]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching archived tasks: {str(e)}")

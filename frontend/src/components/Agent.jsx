@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaCircleArrowUp, FaMicrophone, FaChevronDown, FaRobot } from "react-icons/fa6";
 import { RxCross2 } from "react-icons/rx";
-import { BiSolidFaceMask } from "react-icons/bi";
 import ApiClient from '../services/api';
 import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import { useProjects } from '../hooks/useProjects';
+import MascotSVG from '../assets/face-1.svg?react';
 
 const Agent = () => {
   const { selectedProject, updateSelectedProject } = useSelectedProject();
@@ -301,9 +301,9 @@ const Agent = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-4 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all duration-300 flex items-center justify-center z-50 cursor-pointer"
+          className="fixed bottom-6 right-4 w-12 h-12 bg-blue-600 hover:scale-110 rounded-full shadow-md transition-all duration-150 ease-in-out flex items-center justify-center z-40 cursor-pointer"
         >
-          <BiSolidFaceMask className="w-7 h-7" />
+          <MascotSVG fill='#fff' className='w-8 h-8' />
         </button>
       )}
 
@@ -406,7 +406,7 @@ const Agent = () => {
               <div className="flex justify-start">
                 <div className="flex gap-2 max-w-[85%]">
                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <BiSolidFaceMask className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                    <MascotSVG fill='#fff' className='w-8 h-8' />
                   </div>
                   <div className="bg-gray-100 dark:bg-[#3A3A3A] rounded-lg px-3 py-2">
                     <div className="flex space-x-1">

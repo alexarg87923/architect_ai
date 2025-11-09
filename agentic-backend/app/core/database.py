@@ -94,6 +94,7 @@ class Task(Base):
     task_type = Column(String, nullable=False)  # "daily-todos" or "your-ideas"
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    archive = Column(Boolean,default=False)
     
     # Relationships
     project = relationship("Project", back_populates="tasks")

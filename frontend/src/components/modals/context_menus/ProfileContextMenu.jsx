@@ -2,7 +2,7 @@ import React from 'react';
 import { HiLogout } from 'react-icons/hi';
 import { FiSettings } from 'react-icons/fi';
 
-const ProfileMenuModal = ({ isOpen, user, onClose, onLogout, onOpenSettings }) => {
+const ProfileContextMenu = ({ isOpen, onClose, onLogout, onOpenSettings }) => {
   if (!isOpen) return null;
 
   const handleLogout = () => {
@@ -51,4 +51,4 @@ const ProfileMenuModal = ({ isOpen, user, onClose, onLogout, onOpenSettings }) =
   );
 };
 
-export default ProfileMenuModal;
+export default ProfileContextMenu;
