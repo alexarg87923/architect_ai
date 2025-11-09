@@ -186,6 +186,20 @@ const Agent = () => {
     setShowWelcomeBubble(false);
   };
 
+  // Close chat when other UI needs focus (e.g., Edit Node sidebar)
+  useEffect(() => {
+    const handleExternalClose = () => {
+      try {
+        setIsOpen(false);
+        localStorage.setItem('chatBoxOpen', JSON.stringify(false));
+      } catch (error) {
+        console.error('Failed to save chat box state:', error);
+      }
+    };
+    window.addEventListener('agent:close', handleExternalClose);
+    return () => window.removeEventListener('agent:close', handleExternalClose);
+  }, []);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 

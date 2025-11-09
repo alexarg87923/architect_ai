@@ -115,7 +115,8 @@ def create_sample_projects(db: Session, users):
                             "A new Git repository is created and initialized.",
                             "Basic `.gitignore` and `README.md` files are set up.",
                             "Essential development tools (e.g., code editor, npm/yarn) are ready."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 102,
@@ -124,7 +125,8 @@ def create_sample_projects(db: Session, users):
                             "A React project is initialized using Create React App or Vite.",
                             "Frontend dependencies are installed.",
                             "A basic 'Hello World' React component is displayed in the browser."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 103,
@@ -134,7 +136,8 @@ def create_sample_projects(db: Session, users):
                             "PostgreSQL database is installed and running locally.",
                             "A database connection is successfully established from the Node.js backend.",
                             "Basic API endpoint returns a success message."
-                        ]
+                        ],
+                        "completed": False
                     }
                 ]
             },
@@ -152,7 +155,8 @@ def create_sample_projects(db: Session, users):
                             "Navigation links (e.g., About, Projects, Skills) are functional.",
                             "Footer with copyright and basic links is implemented.",
                             "Layout adjusts correctly for mobile, tablet, and desktop screen sizes."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 202,
@@ -161,7 +165,8 @@ def create_sample_projects(db: Session, users):
                             "At least 3 core UI components (e.g., Button, Card, Section) are created.",
                             "Components follow clear naming conventions and styling guidelines.",
                             "Components are documented with prop types and basic usage examples."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 203,
@@ -170,7 +175,8 @@ def create_sample_projects(db: Session, users):
                             "React Router is configured to manage client-side navigation.",
                             "Clicking navigation links loads the correct section component without page refresh.",
                             "URL paths accurately reflect the current section (e.g., /about, /projects)."
-                        ]
+                        ],
+                        "completed": False
                     }
                 ]
             },
@@ -187,7 +193,8 @@ def create_sample_projects(db: Session, users):
                             "Database schema includes tables for 'projects', 'skills', and 'about_me' information.",
                             "Tables have appropriate columns and data types (e.g., project_name TEXT, skill_level INT).",
                             "Relationships between tables are defined (if applicable, e.g., for project tags)."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 302,
@@ -196,7 +203,8 @@ def create_sample_projects(db: Session, users):
                             "API endpoints are created for /api/about, /api/projects, and /api/skills.",
                             "Each endpoint successfully queries the PostgreSQL database.",
                             "Endpoints return data in a consistent JSON format."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 303,
@@ -205,7 +213,8 @@ def create_sample_projects(db: Session, users):
                             "A migration tool (e.g., Knex, TypeORM migrations) is configured.",
                             "Initial migrations create the defined database schema.",
                             "Seeder files populate the database with sample portfolio data (about, projects, skills)."
-                        ]
+                        ],
+                        "completed": False
                     }
                 ]
             },
@@ -222,7 +231,8 @@ def create_sample_projects(db: Session, users):
                             "The 'About Me' section displays personal information fetched from the backend.",
                             "Includes a professional photo and a concise biography.",
                             "Styling is consistent with the overall UI design."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 402,
@@ -231,7 +241,8 @@ def create_sample_projects(db: Session, users):
                             "The 'Projects' section fetches and displays a list of projects from the backend.",
                             "Each project displays a title, description, technologies used, and a link to the live demo/repo.",
                             "Projects are presented in an appealing, scannable format (e.g., cards or grid)."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 403,
@@ -240,7 +251,8 @@ def create_sample_projects(db: Session, users):
                             "The 'Skills' section fetches and displays technical skills from the backend.",
                             "Skills are categorized (e.g., Frontend, Backend, Databases) or displayed visually (e.g., skill bars).",
                             "The section is easy to read and highlights key proficiencies."
-                        ]
+                        ],
+                        "completed": False
                     }
                 ]
             },
@@ -257,7 +269,8 @@ def create_sample_projects(db: Session, users):
                             "Frontend build process generates optimized production assets.",
                             "Backend server is configured for production environment variables.",
                             "All environment-specific configurations are managed securely."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 502,
@@ -266,7 +279,8 @@ def create_sample_projects(db: Session, users):
                             "Frontend is deployed to a static site host (e.g., Netlify, Vercel).",
                             "Backend API is deployed to a cloud platform (e.g., Heroku, AWS EC2, DigitalOcean).",
                             "Both frontend and backend are accessible via public URLs."
-                        ]
+                        ],
+                        "completed": False
                     },
                     {
                         "id": 503,
@@ -275,7 +289,8 @@ def create_sample_projects(db: Session, users):
                             "A custom domain (if desired) is pointed to the deployed application.",
                             "SSL/TLS certificate is configured for secure HTTPS access.",
                             "The portfolio is fully accessible and loads securely via the custom domain."
-                        ]
+                        ],
+                        "completed": False
                     }
                 ]
             }
@@ -319,7 +334,8 @@ def create_sample_projects(db: Session, users):
                                 "A new Git repository is created and initialized.",
                                 "Basic `.gitignore` and `README.md` files are set up.",
                                 "Essential development tools (e.g., code editor, npm/yarn) are ready."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 102,
@@ -328,7 +344,8 @@ def create_sample_projects(db: Session, users):
                                 "A React project is initialized using Create React App or Vite.",
                                 "Frontend dependencies are installed.",
                                 "A basic 'Hello World' React component is displayed in the browser."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 103,
@@ -338,7 +355,8 @@ def create_sample_projects(db: Session, users):
                                 "PostgreSQL database is installed and running locally.",
                                 "A database connection is successfully established from the Node.js backend.",
                                 "Basic API endpoint returns a success message."
-                            ]
+                            ],
+                            "completed": False
                         }
                     ]
                 },
@@ -356,7 +374,8 @@ def create_sample_projects(db: Session, users):
                                 "Navigation links (e.g., About, Projects, Skills) are functional.",
                                 "Footer with copyright and basic links is implemented.",
                                 "Layout adjusts correctly for mobile, tablet, and desktop screen sizes."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 202,
@@ -365,7 +384,8 @@ def create_sample_projects(db: Session, users):
                                 "At least 3 core UI components (e.g., Button, Card, Section) are created.",
                                 "Components follow clear naming conventions and styling guidelines.",
                                 "Components are documented with prop types and basic usage examples."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 203,
@@ -374,7 +394,8 @@ def create_sample_projects(db: Session, users):
                                 "React Router is configured to manage client-side navigation.",
                                 "Clicking navigation links loads the correct section component without page refresh.",
                                 "URL paths accurately reflect the current section (e.g., /about, /projects)."
-                            ]
+                            ],
+                            "completed": False
                         }
                     ]
                 },
@@ -391,7 +412,8 @@ def create_sample_projects(db: Session, users):
                                 "Database schema includes tables for 'projects', 'skills', and 'about_me' information.",
                                 "Tables have appropriate columns and data types (e.g., project_name TEXT, skill_level INT).",
                                 "Relationships between tables are defined (if applicable, e.g., for project tags)."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 302,
@@ -400,7 +422,8 @@ def create_sample_projects(db: Session, users):
                                 "API endpoints are created for /api/about, /api/projects, and /api/skills.",
                                 "Each endpoint successfully queries the PostgreSQL database.",
                                 "Endpoints return data in a consistent JSON format."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 303,
@@ -409,7 +432,8 @@ def create_sample_projects(db: Session, users):
                                 "A migration tool (e.g., Knex, TypeORM migrations) is configured.",
                                 "Initial migrations create the defined database schema.",
                                 "Seeder files populate the database with sample portfolio data (about, projects, skills)."
-                            ]
+                            ],
+                            "completed": False
                         }
                     ]
                 },
@@ -426,7 +450,8 @@ def create_sample_projects(db: Session, users):
                                 "The 'About Me' section displays personal information fetched from the backend.",
                                 "Includes a professional photo and a concise biography.",
                                 "Styling is consistent with the overall UI design."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 402,
@@ -435,7 +460,8 @@ def create_sample_projects(db: Session, users):
                                 "The 'Projects' section fetches and displays a list of projects from the backend.",
                                 "Each project displays a title, description, technologies used, and a link to the live demo/repo.",
                                 "Projects are presented in an appealing, scannable format (e.g., cards or grid)."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 403,
@@ -444,7 +470,8 @@ def create_sample_projects(db: Session, users):
                                 "The 'Skills' section fetches and displays technical skills from the backend.",
                                 "Skills are categorized (e.g., Frontend, Backend, Databases) or displayed visually (e.g., skill bars).",
                                 "The section is easy to read and highlights key proficiencies."
-                            ]
+                            ],
+                            "completed": False
                         }
                     ]
                 },
@@ -461,7 +488,8 @@ def create_sample_projects(db: Session, users):
                                 "Frontend build process generates optimized production assets.",
                                 "Backend server is configured for production environment variables.",
                                 "All environment-specific configurations are managed securely."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 502,
@@ -470,7 +498,8 @@ def create_sample_projects(db: Session, users):
                                 "Frontend is deployed to a static site host (e.g., Netlify, Vercel).",
                                 "Backend API is deployed to a cloud platform (e.g., Heroku, AWS EC2, DigitalOcean).",
                                 "Both frontend and backend are accessible via public URLs."
-                            ]
+                            ],
+                            "completed": False
                         },
                         {
                             "id": 503,
@@ -479,7 +508,8 @@ def create_sample_projects(db: Session, users):
                                 "A custom domain (if desired) is pointed to the deployed application.",
                                 "SSL/TLS certificate is configured for secure HTTPS access.",
                                 "The portfolio is fully accessible and loads securely via the custom domain."
-                            ]
+                            ],
+                            "completed": False
                         }
                     ]
                 }

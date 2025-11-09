@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { FaCheckCircle, FaClock } from 'react-icons/fa';
 import { EditNodeSidebar } from '../EditNodeSidebar';
+import ApiClient from '../../services/api';
+import { useSelectedProject } from '../../contexts/SelectedProjectContext';
 
 export const SubtaskNode = ({ data }) => {
-  const { subtask, onToggleComplete, parentNodeId } = data;
-  const [isEditNodeSidebarOpen, setIsEditNodeSidebarOpen] = useState(false);
+  const { subtask, onToggleComplete, onUpdate, onDelete, parentNodeId, nodeId, selectedNodeId, setSelectedNodeId } = data;
+  const { selectedProject } = useSelectedProject();
+  const isEditNodeSidebarOpen = selectedNodeId === nodeId;
 
   const handleToggleComplete = () => {
+    const currentCompleted = subtask.completed ?? false;
+    const newCompleted = !currentCompleted;
     if (onToggleComplete) {
-      onToggleComplete(parentNodeId, subtask.id, !subtask.completed);
+      onToggleComplete(parentNodeId, subtask.id, newCompleted);
     }
   };
 
@@ -28,19 +33,85 @@ export const SubtaskNode = ({ data }) => {
   };
 
   const handleToggleNodeEditSidebar = () => {
-    setIsEditNodeSidebarOpen((prevState) => !prevState);
+    if (!setSelectedNodeId) return;
+    setSelectedNodeId((prev) => {
+      const next = prev === nodeId ? null : nodeId;
+      if (next === nodeId) {
+        // We're opening the edit sidebar; signal the agent to close
+        try { window.dispatchEvent(new CustomEvent('agent:close')); } catch (_) {}
+      }
+      return next;
+    });
   };
 
   const handleCloseEditNodeSidebar = () => {
-
+    if (!setSelectedNodeId) return;
+    setSelectedNodeId(null);
   };
 
-  const handleDeleteEditNodeSidebar = () => {
+  const handleDeleteEditNodeSidebar = async () => {
+    try {
+      if (onDelete) {
+        onDelete(parentNodeId, subtask.id);
+      }
 
+      // Persist to backend by fetching full roadmap_data and updating it
+      if (selectedProject?.id) {
+        const fullProject = await ApiClient.getProject(selectedProject.id);
+        const roadmap = fullProject?.roadmap_data;
+        if (roadmap && Array.isArray(roadmap.epics)) {
+          const epicIdNum = parseInt(parentNodeId, 10);
+          const updatedEpics = roadmap.epics.map(epic => {
+            if (epic.id === epicIdNum) {
+              const currentStories = epic.stories || [];
+              return {
+                ...epic,
+                stories: currentStories.filter(s => s.id !== subtask.id)
+              };
+            }
+            return epic;
+          });
+          const updatedRoadmap = { ...roadmap, epics: updatedEpics };
+          await ApiClient.updateProjectRoadmap(selectedProject.id, updatedRoadmap);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to delete subtask and persist:', e);
+    }
   };
 
-  const handleUpdateEditNodeSidebar = () => {
+  const handleUpdateEditNodeSidebar = async (_id, updates) => {
+    try {
+      if (onUpdate) {
+        onUpdate(parentNodeId, subtask.id, updates);
+      }
 
+      // Persist to backend by fetching full roadmap_data and updating it
+      if (selectedProject?.id) {
+        const fullProject = await ApiClient.getProject(selectedProject.id);
+        const roadmap = fullProject?.roadmap_data;
+        if (roadmap && Array.isArray(roadmap.epics)) {
+          const epicIdNum = parseInt(parentNodeId, 10);
+          const updatedEpics = roadmap.epics.map(epic => {
+            if (epic.id === epicIdNum) {
+              const currentStories = epic.stories || [];
+              const updatedStories = currentStories.map(s => (
+                s.id === subtask.id ? { ...s, ...updates } : s
+              ));
+              return {
+                ...epic,
+                stories: updatedStories
+              };
+            }
+            return epic;
+          });
+          const updatedRoadmap = { ...roadmap, epics: updatedEpics };
+          await ApiClient.updateProjectRoadmap(selectedProject.id, updatedRoadmap);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to update subtask and persist:', e);
+    }
   };
 
   return (

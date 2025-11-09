@@ -7,6 +7,7 @@ class Story(BaseModel):
     id: int
     title: str
     acceptance_criteria: List[str] = []
+    completed: bool = False
 
 class Epic(BaseModel):
     """High-level feature epic containing multiple stories"""

@@ -70,6 +70,8 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
   // Modal state for project overview
   const [isOverviewModalOpen, setIsOverviewModalOpen] = useState(false);
   const [selectedNodeForOverview, setSelectedNodeForOverview] = useState(null);
+  // Track which subtask node is currently selected (for exclusive active state)
+  const [selectedSubtaskNodeId, setSelectedSubtaskNodeId] = useState(null);
 
   // Function to open the overview modal with selected epic data
   const openOverviewModal = useCallback((epicData) => {
@@ -85,20 +87,20 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
   // Handle story completion toggle
   const handleStoryToggle = useCallback((parentEpicId, storyId, completed) => {
-    // Update the epics with the new story completion status
     const updatedEpics = epics.map(epic => {
-      const epicId = epic.id || `roadmap-${epics.indexOf(epic)}`;
-      if (epicId === parentEpicId || `roadmap-${epics.indexOf(epic)}` === parentEpicId) {
+      const epicNodeId = String(epic.id);
+      if (epicNodeId === parentEpicId) {
         const stories = epic.stories || epic.subtasks || [];
-        const updatedStories = stories.map(story =>
-          story.id === storyId ? { ...story, completed } : story
-        );
+        const updatedStories = stories.map(story => {
+          if (story.id === storyId) {
+            return { ...story, completed };
+          }
+          return story;
+        });
 
-        // Calculate completion percentage for the parent epic
         const completedStories = updatedStories.filter(st => st.completed).length;
         const completion_percentage = Math.round((completedStories / updatedStories.length) * 100);
 
-        // Update parent epic status based on completion
         let status = 'pending';
         if (completion_percentage === 100) {
           status = 'completed';
@@ -123,6 +125,79 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
     }
   }, [epics, onRoadmapNodesChange]);
 
+  // Handle story update (title/description/etc.)
+  const handleStoryUpdate = useCallback((parentEpicId, storyId, updates) => {
+    const updatedEpics = epics.map(epic => {
+      const epicNodeId = String(epic.id);
+      if (epicNodeId === parentEpicId) {
+        const stories = epic.stories || epic.subtasks || [];
+        const updatedStories = stories.map(story => {
+          if (story.id === storyId) {
+            return { ...story, ...updates };
+          }
+          return story;
+        });
+
+        const completedStories = updatedStories.filter(st => st.completed).length;
+        const completion_percentage = Math.round((completedStories / updatedStories.length) * 100);
+
+        let status = 'pending';
+        if (completion_percentage === 100) {
+          status = 'completed';
+        } else if (completion_percentage > 0) {
+          status = 'in-progress';
+        }
+
+        return {
+          ...epic,
+          stories: updatedStories,
+          subtasks: updatedStories, // Backward compatibility
+          completion_percentage,
+          status
+        };
+      }
+      return epic;
+    });
+
+    if (onRoadmapNodesChange) {
+      onRoadmapNodesChange(updatedEpics);
+    }
+  }, [epics, onRoadmapNodesChange]);
+
+  // Handle story delete
+  const handleStoryDelete = useCallback((parentEpicId, storyId) => {
+    const updatedEpics = epics.map(epic => {
+      const epicNodeId = String(epic.id);
+      if (epicNodeId === parentEpicId) {
+        const stories = epic.stories || epic.subtasks || [];
+        const updatedStories = stories.filter(story => story.id !== storyId);
+
+        const completedStories = updatedStories.filter(st => st.completed).length;
+        const completion_percentage = updatedStories.length === 0 ? 0 : Math.round((completedStories / updatedStories.length) * 100);
+
+        let status = 'pending';
+        if (completion_percentage === 100 && updatedStories.length > 0) {
+          status = 'completed';
+        } else if (completion_percentage > 0) {
+          status = 'in-progress';
+        }
+
+        return {
+          ...epic,
+          stories: updatedStories,
+          subtasks: updatedStories, // Backward compatibility
+          completion_percentage,
+          status
+        };
+      }
+      return epic;
+    });
+
+    if (onRoadmapNodesChange) {
+      onRoadmapNodesChange(updatedEpics);
+    }
+  }, [epics, onRoadmapNodesChange]);
+
 
   const initialNodes = useMemo(() => {
     const nodes = [];
@@ -140,7 +215,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
     // Add epic nodes if they exist
     if (epics && epics.length > 0) {
       epics.forEach((epic, index) => {
-        const epicId = String(epic.id || `roadmap-${index}`);
+        const epicId = String(epic.id);
 
         // Add the main epic node
         nodes.push({
@@ -197,8 +272,13 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
               },
               data: {
                 subtask: story, // Keep name as subtask for component compatibility
-                parentNodeId: epicId,
-                onToggleComplete: handleStoryToggle
+                parentNodeId: epicId, // React Flow node ID (string)
+                onToggleComplete: handleStoryToggle,
+                onUpdate: handleStoryUpdate,
+                onDelete: handleStoryDelete,
+                nodeId: storyId,
+                selectedNodeId: selectedSubtaskNodeId,
+                setSelectedNodeId: setSelectedSubtaskNodeId
               },
               deletable: false,
             });
@@ -208,7 +288,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
     }
 
     return nodes;
-  }, [hasProject, projectName, epics, handleStoryToggle, openOverviewModal]);
+  }, [hasProject, projectName, epics, handleStoryToggle, openOverviewModal, selectedSubtaskNodeId]);
 
   const initialEdges = useMemo(() => {
     const edges = [];
@@ -231,11 +311,11 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
       // Create sequential connections between epic nodes
       epics.forEach((epic, index) => {
-        const epicId = String(epic.id || `roadmap-${index}`);
+        const epicId = String(epic.id);
 
         // Connect to next epic node (top to bottom)
         if (index < epics.length - 1) {
-          const nextId = String(epics[index + 1].id || `roadmap-${index + 1}`);
+          const nextId = String(epics[index + 1].id);
 
           edges.push({
             id: `roadmap-${index}-to-${index + 1}`,
