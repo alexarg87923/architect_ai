@@ -1,15 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaCircleArrowUp, FaMicrophone, FaChevronDown, FaRobot } from "react-icons/fa6";
-import { RxCross2 } from "react-icons/rx";
 import ApiClient from '../services/api';
 import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import { useProjects } from '../hooks/useProjects';
+import InputBox from './InputBox';
+// icon imports
 import MascotSVG from '../assets/face-1.svg?react';
+import { FaChevronDown, FaRobot } from "react-icons/fa6";
+import { RxCross2 } from "react-icons/rx";
+
 
 const Agent = () => {
   const { selectedProject, updateSelectedProject } = useSelectedProject();
   const { refreshProjects } = useProjects();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    try {
+      const savedState = localStorage.getItem('chatBoxOpen');
+      return savedState ? JSON.parse(savedState) : false;
+    } catch (error) {
+      console.error('Failed to load chat box state:', error);
+      return false;
+    }
+  });
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [selectedAction, setSelectedAction] = useState('Chat');
   const [messages, setMessages] = useState([]);
@@ -23,7 +34,6 @@ const Agent = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [selectedProjectType, setSelectedProjectType] = useState('codementor');
   const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
   const actionMenuRef = useRef(null);
 
   const actionOptions = [
@@ -47,11 +57,9 @@ const Agent = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Focus input when chat opens
+  // Show welcome message when chat opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-      
+    if (isOpen) {
       // Show welcome message on first open
       if (!hasShownWelcome) {
         setHasShownWelcome(true);
@@ -66,10 +74,6 @@ const Agent = () => {
     }
   }, [isOpen, hasShownWelcome]);
 
-  // Adjust textarea height when input value changes
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [inputValue]);
 
   // Fetch available project types when component mounts
   useEffect(() => {
@@ -113,14 +117,20 @@ const Agent = () => {
     };
   }, []);
 
-  const handleActionSelect = (actionId) => {
-    setSelectedAction(actionId);
-    setShowActionMenu(false);
-  };
 
   const handleProjectTypeSelect = (projectType) => {
     setSelectedProjectType(projectType);
     setShowProjectTypeMenu(false);
+  };
+
+  // Function to handle chat box open/close with localStorage saving
+  const handleChatBoxToggle = (open) => {
+    setIsOpen(open);
+    try {
+      localStorage.setItem('chatBoxOpen', JSON.stringify(open));
+    } catch (error) {
+      console.error('Failed to save chat box state:', error);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -137,13 +147,6 @@ const Agent = () => {
     setInputValue('');
     setIsTyping(true);
     setError(null);
-    
-    // Reset textarea height after sending
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-      }
-    }, 0);
 
     try {
       // Call the real agent API
@@ -273,34 +276,13 @@ const Agent = () => {
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  // Auto-resize textarea function
-  const adjustTextareaHeight = () => {
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-    }
-  };
-
-  // Handle input change with auto-resize
-  const handleInputChange = (e) => {
-    setInputValue(e.target.value);
-    // Small delay to ensure smooth resizing
-    setTimeout(adjustTextareaHeight, 0);
-  };
 
   return (
     <>
       {/* Chat Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => handleChatBoxToggle(true)}
           className="fixed bottom-6 right-4 w-12 h-12 bg-blue-600 hover:scale-110 rounded-full shadow-md transition-all duration-150 ease-in-out flex items-center justify-center z-40 cursor-pointer"
         >
           <MascotSVG fill='#fff' className='w-8 h-8' />
@@ -312,14 +294,14 @@ const Agent = () => {
         <div className="fixed bottom-6 right-4 w-[450px] h-[450px] bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-xl border border-gray-200 dark:border-[#3C3C3C] flex flex-col z-50">
           {/* Header */}
           <div className="flex items-center justify-between dark:text-white px-4 py-3 rounded-t-2xl">
-            <div className="text-sm capitalize">
-              {currentPhase.replace('_', ' ')} phase
+            <div className="text-sm font-medium flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] rounded-xl py-1 px-2 cursor-pointer transition-colors">
+              This chat <FaChevronDown className="w-3 h-3" />
             </div>
             <div className="flex items-center gap-2">
               {/* Project Type Dropdown */}
               <div className="relative" ref={projectTypeMenuRef}>
                 {showProjectTypeMenu && (
-                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-1 z-10">
+                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-1 z-10">
                     {loadingProjectOptions ? (
                       <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                         Loading...
@@ -343,14 +325,14 @@ const Agent = () => {
                 <button
                   onClick={() => setShowProjectTypeMenu(!showProjectTypeMenu)}
                   disabled={isSimulating || loadingProjectOptions}
-                  className={`p-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                  className={`text-sm font-medium flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] rounded-xl py-1 px-2 cursor-pointer transition-colors ${
                     isSimulating || loadingProjectOptions
                       ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 cursor-pointer'
+                      : ' cursor-pointer'
                   }`}
                   title="Select project type for simulation"
                 >
-                  <span className="text-xs">
+                  <span className="text-sm">
                     {loadingProjectOptions ? 'Loading...' : availableProjectTypes.find(p => p.value === selectedProjectType)?.label || 'CodeMentor'}
                   </span>
                   <FaChevronDown className="w-3 h-3" />
@@ -361,22 +343,22 @@ const Agent = () => {
               <button
                 onClick={startSimulation}
                 disabled={isSimulating}
-                className={`p-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`p-1 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] rounded-full transition-colors ${
                   isSimulating 
                     ? 'dark:bg-gray-400 text-gray-200 cursor-not-allowed' 
                     : 'cursor-pointer'
                 }`}
                 title={`Simulate ${availableProjectTypes.find(p => p.value === selectedProjectType)?.label} conversation flow`}
               >
-                <FaRobot className="w-5 h-5 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100" />
+                <FaRobot className="w-5 h-5 text-gray-600 dark:text-gray-100 pb-0.5" />
               </button>
               
               {/* Close Button */}
               <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 cursor-pointer"
+                onClick={() => handleChatBoxToggle(false)}
+                className="p-1 cursor-pointer hover:bg-gray-200 dark:hover:bg-[#3A3A3A] rounded-full transition-colors"
               >
-                <RxCross2 className="w-4 h-4" />
+                <RxCross2 className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -447,79 +429,20 @@ const Agent = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-4">
-            {/* Input Area with inline buttons */}
-            <div className="bg-gray-50 dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#3C3C3C] rounded-xl px-2 pb-2 pt-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={handleInputChange}
-                placeholder="Ask me anything..."
-                className="w-full resize-none bg-transparent text-sm focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 px-2 leading-5"
-                rows="1"
-                style={{ 
-                  maxHeight: '120px', 
-                  minHeight: '20px',
-                  overflowY: 'auto'
-                }}
-              />
-              
-              {/* Button Container */}
-              <div className="flex justify-between items-center pt-1">
-                <div className="flex items-center gap-1 relative" ref={actionMenuRef}>
-                  {/* Action Menu Dropdown */}
-                  {showActionMenu && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-1 min-w-[180px] z-10">
-                      {actionOptions.map((option) => (
-                        <button
-                          key={option.id}
-                          onClick={() => handleActionSelect(option.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3A3A3A] transition-colors ${
-                            selectedAction === option.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Microphone Button */}
-                  <button
-                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer"
-                    title="Voice input"
-                  >
-                    <FaMicrophone className="w-4.5 h-4.5" />
-                  </button>
-                  
-                  {/* Action Selector Button */}
-                  <button
-                    onClick={() => setShowActionMenu(!showActionMenu)}
-                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer flex items-center gap-1"
-                    title={`Current action: ${actionOptions.find(opt => opt.id === selectedAction)?.label}`}
-                  >
-                    <span className="text-xs font-medium">{selectedAction}</span>
-                    <FaChevronDown className='w-3 h-3' />
-                  </button>
-                </div>     
-                
-                {/* Send Button */}           
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isTyping}
-                  className={`p-1 text-gray-400 dark:text-gray-500 transition-colors rounded-lg disabled:cursor-not-allowed ${
-                      !(!inputValue.trim() || isTyping) 
-                          ? 'hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer' 
-                          : 'cursor-not-allowed'
-                  }`}
-                >
-                  <FaCircleArrowUp className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Input Box */}
+          <InputBox
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSendMessage={handleSendMessage}
+            isTyping={isTyping}
+            selectedAction={selectedAction}
+            setSelectedAction={setSelectedAction}
+            showActionMenu={showActionMenu}
+            setShowActionMenu={setShowActionMenu}
+            actionOptions={actionOptions}
+            actionMenuRef={actionMenuRef}
+            shouldFocus={isOpen}
+          />
         </div>
       )}
     </>

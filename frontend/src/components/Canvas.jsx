@@ -13,6 +13,7 @@ import { RoadmapNode } from './nodes/RoadmapNode';
 import { StartNode } from './nodes/StartNode';
 import { SubtaskNode } from './nodes/SubtaskNode';
 import { ProjectOverviewModal } from './modals/ProjectOverviewModal';
+// icon imports
 import { MdFilterCenterFocus } from "react-icons/md";
 
 const nodeTypes = { roadmap: RoadmapNode, start: StartNode, subtask: SubtaskNode };
@@ -291,7 +292,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
       </ReactFlow>
       <button
         onClick={centerViewport}
-        className="absolute top-5 right-5 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-2 shadow-lg transition-all duration-200 hover:shadow-xl group text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 cursor-pointer"
+        className="absolute top-5 right-5 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-2 shadow-sm transition-all duration-200 group text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 cursor-pointer"
       >
         <MdFilterCenterFocus className="w-6 h-6" />
       </button>
