@@ -3,7 +3,6 @@ import ApiClient from '../services/api';
 import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import { useProjects } from '../hooks/useProjects';
 import InputBox from './InputBox';
-import WelcomeBubble from './WelcomeBubble';
 // icon imports
 import MascotSVG from '../assets/face-1.svg?react';
 import { FaChevronDown, FaRobot } from "react-icons/fa6";
@@ -22,10 +21,6 @@ const Agent = () => {
       return false;
     }
   });
-  
-  // Simple state that resets on page refresh
-  const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
-  
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [selectedAction, setSelectedAction] = useState('Chat');
   const [messages, setMessages] = useState([]);
@@ -128,28 +123,14 @@ const Agent = () => {
     setShowProjectTypeMenu(false);
   };
 
-  // Function to handle chat box open/close
+  // Function to handle chat box open/close with localStorage saving
   const handleChatBoxToggle = (open) => {
     setIsOpen(open);
-    if (open) {
-      // Hide welcome bubble when chat opens
-      setShowWelcomeBubble(false);
-    }
     try {
       localStorage.setItem('chatBoxOpen', JSON.stringify(open));
     } catch (error) {
       console.error('Failed to save chat box state:', error);
     }
-  };
-
-  // Handle welcome bubble interactions
-  const handleWelcomeBubbleOpenChat = () => {
-    setShowWelcomeBubble(false);
-    handleChatBoxToggle(true);
-  };
-
-  const handleWelcomeBubbleDismiss = () => {
-    setShowWelcomeBubble(false);
   };
 
   const handleSendMessage = async () => {
@@ -220,7 +201,7 @@ const Agent = () => {
     }
   };
 
-  const startSimulation = async () => {
+    const startSimulation = async () => {
     if (isSimulating) return;
 
     if (!selectedProject) {
@@ -298,15 +279,7 @@ const Agent = () => {
 
   return (
     <>
-      {/* Only show welcome bubble if chat is closed AND it hasn't been dismissed this session */}
-      {!isOpen && showWelcomeBubble && (
-        <WelcomeBubble 
-          onOpenChat={handleWelcomeBubbleOpenChat}
-          onDismiss={handleWelcomeBubbleDismiss}
-        />
-      )}
-
-      {/* Regular Chat Button - always show when chat is closed */}
+      {/* Chat Button */}
       {!isOpen && (
         <button
           onClick={() => handleChatBoxToggle(true)}

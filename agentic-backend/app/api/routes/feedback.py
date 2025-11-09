@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.services.user_service import UserService
 from app.services.feedback_service import FeedbackService
-from app.models.agent import FeedbackCreate, FeedbackResponse
+from app.models.api_schemas import FeedbackCreate, FeedbackResponse
 from typing import List
 
 router = APIRouter()
