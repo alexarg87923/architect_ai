@@ -3,10 +3,12 @@ import Agent from "../components/Agent";
 import TaskSidebar from "../components/TaskSidebar";
 import { Canvas } from "../components/Canvas";
 import { useSelectedProject } from "../contexts/SelectedProjectContext";
+import { useProjects } from "../hooks/useProjects";
 import { useState, useEffect } from "react";
 
 function Dashboard({ isDark, toggleTheme }) {
     const { selectedProject, updateRoadmapNodes } = useSelectedProject();
+    const { updateProject } = useProjects();
     
     // Manage sidebar collapsed state
     const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -63,8 +65,8 @@ function Dashboard({ isDark, toggleTheme }) {
 
             {/* Main content area */}
             <div className="flex-1 bg-gray-50 dark:bg-[#1a1a1a]">
-                <Canvas 
-                    hasProject={!!selectedProject} 
+                <Canvas
+                    hasProject={!!selectedProject}
                     projectName={selectedProject?.name}
                     roadmapNodes={selectedProject?.roadmapNodes || []}
                     onNodesChange={updateRoadmapNodes}

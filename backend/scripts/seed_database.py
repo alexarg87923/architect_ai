@@ -437,7 +437,7 @@ def main():
             users = create_dummy_users(db)
             
             # Create sample projects for each user
-            create_sample_projects(db, users)
+            # create_sample_projects(db, users)
             
             logger.info("=" * 50)
             logger.info("🎉 Database seeding completed successfully!")

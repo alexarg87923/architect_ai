@@ -6,7 +6,7 @@ import { EditNodeSidebar } from '../EditNodeSidebar';
 export const SubtaskNode = ({ data }) => {
   const { subtask, onToggleComplete, parentNodeId } = data;
   const [isEditNodeSidebarOpen, setIsEditNodeSidebarOpen] = useState(false);
-  
+
   const handleToggleComplete = () => {
     if (onToggleComplete) {
       onToggleComplete(parentNodeId, subtask.id, !subtask.completed);
@@ -32,15 +32,15 @@ export const SubtaskNode = ({ data }) => {
   };
 
   const handleCloseEditNodeSidebar = () => {
-    
+
   };
 
   const handleDeleteEditNodeSidebar = () => {
-    
+
   };
 
   const handleUpdateEditNodeSidebar = () => {
-    
+
   };
 
   return (

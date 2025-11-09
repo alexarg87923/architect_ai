@@ -14,7 +14,8 @@ const InputBox = ({
   setShowActionMenu,
   actionOptions,
   actionMenuRef,
-  shouldFocus = false
+  shouldFocus = false,
+  disabled = false
 }) => {
   const [showTooltip, setShowTooltip] = useState({ attachNodes: false, attachFiles: false, actionSelector: false });
   const [tooltipTimeouts, setTooltipTimeouts] = useState({ attachNodes: null, attachFiles: null, actionSelector: null });
@@ -140,7 +141,8 @@ const InputBox = ({
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           placeholder="Ask me anything..."
-          className="w-full resize-none bg-transparent text-sm focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 px-2 leading-5"
+          disabled={disabled}
+          className="w-full resize-none bg-transparent text-sm focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 px-2 leading-5 disabled:opacity-50 disabled:cursor-not-allowed"
           rows="1"
           style={{ 
             maxHeight: '120px', 
@@ -212,9 +214,9 @@ const InputBox = ({
           {/* Send Button */}           
           <button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isTyping}
+            disabled={!inputValue.trim() || isTyping || disabled}
             className={`p-1 text-gray-400 dark:text-gray-500 transition-colors rounded-lg disabled:cursor-not-allowed ${
-                !(!inputValue.trim() || isTyping) 
+                !(!inputValue.trim() || isTyping || disabled) 
                     ? 'hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer' 
                     : 'cursor-not-allowed'
             }`}

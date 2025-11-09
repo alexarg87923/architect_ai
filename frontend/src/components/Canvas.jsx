@@ -140,7 +140,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
     // Add epic nodes if they exist
     if (epics && epics.length > 0) {
       epics.forEach((epic, index) => {
-        const epicId = epic.id || `roadmap-${index}`;
+        const epicId = String(epic.id || `roadmap-${index}`);
 
         // Add the main epic node
         nodes.push({
@@ -212,6 +212,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
   const initialEdges = useMemo(() => {
     const edges = [];
+    console.log('🔍 Creating edges, epics count:', epics?.length || 0);
 
     if (epics && epics.length > 0) {
       // Connect start node to first epic
@@ -219,7 +220,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
         edges.push({
           id: 'start-to-first',
           source: 'start-node',
-          target: epics[0].id || 'roadmap-0',
+          target: String(epics[0].id || 'roadmap-0'),
           type: 'smoothstep',
           style: {
             strokeWidth: 1.5,
@@ -230,11 +231,11 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
       // Create sequential connections between epic nodes
       epics.forEach((epic, index) => {
-        const epicId = epic.id || `roadmap-${index}`;
+        const epicId = String(epic.id || `roadmap-${index}`);
 
         // Connect to next epic node (top to bottom)
         if (index < epics.length - 1) {
-          const nextId = epics[index + 1].id || `roadmap-${index + 1}`;
+          const nextId = String(epics[index + 1].id || `roadmap-${index + 1}`);
 
           edges.push({
             id: `roadmap-${index}-to-${index + 1}`,
@@ -278,6 +279,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
       });
     }
 
+    console.log('✅ Created edges count:', edges.length);
     return edges;
   }, [epics]);
 
@@ -291,6 +293,8 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
   }, [initialNodes, setNodes]);
 
   useEffect(() => {
+    console.log('📊 useEffect updating edges, count:', initialEdges.length);
+    console.log('📊 First few edges:', initialEdges.slice(0, 3));
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
@@ -305,11 +309,15 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
         .react-flow__node {
           visibility: visible !important;
         }
+        .react-flow__edge {
+          visibility: visible !important;
+        }
       `}</style>
       <ReactFlow
         panOnScroll
         nodes={nodes}
         edges={edges}
+        onInit={() => console.log('🎨 ReactFlow initialized, edges:', edges.length)}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

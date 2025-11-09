@@ -6,9 +6,8 @@ import InputBox from './InputBox';
 import WelcomeBubble from './WelcomeBubble';
 // icon imports
 import MascotSVG from '../assets/face-1.svg?react';
-import { FaChevronDown } from "react-icons/fa6";
 import { RxCross2 } from "react-icons/rx";
-
+import { FaRobot } from "react-icons/fa6";
 
 const Agent = () => {
   const { selectedProject, updateSelectedProject } = useSelectedProject();
@@ -38,8 +37,8 @@ const Agent = () => {
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const messagesEndRef = useRef(null);
   const actionMenuRef = useRef(null);
-
-  // State for resizable height
+  const [availableProjectTypes, setAvailableProjectTypes] = useState([]);
+  const previousProjectIdRef = useRef(null);
   const [chatHeight, setChatHeight] = useState(() => {
     try {
       const savedHeight = localStorage.getItem('chatBoxHeight');
@@ -51,6 +50,7 @@ const Agent = () => {
   });
   const [isResizing, setIsResizing] = useState(false);
   const resizeStartRef = useRef({ startY: 0, startHeight: 0 });
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const actionOptions = [
     { id: 'Chat', label: 'Chat', description: 'General conversation' },
@@ -59,31 +59,56 @@ const Agent = () => {
     { id: 'Crawl', label: 'Crawl', description: 'Crawl specific resource' }
   ];
 
-  // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const startSimulation = () => {
+    console.log('Starting simulation');
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Show welcome message when chat opens
+  const shouldDisableInput = !selectedProject || 
+    (selectedProject && 
+     Array.isArray(selectedProject.roadmapNodes) && 
+     selectedProject.roadmapNodes.length > 0);
+
   useEffect(() => {
     if (isOpen) {
-      // Show welcome message on first open
-      if (!hasShownWelcome) {
+      const currentProjectId = selectedProject?.id;
+      const projectChanged = previousProjectIdRef.current !== null && 
+                             previousProjectIdRef.current !== currentProjectId;
+      
+      // Show welcome message on first open or when project changes
+      if (!hasShownWelcome || projectChanged) {
         setHasShownWelcome(true);
+        previousProjectIdRef.current = currentProjectId;
+        
         const welcomeMessage = {
           id: Date.now(),
           type: 'agent',
-          content: "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your ideas come to life. To get started give me a description of your project.",
+          content: shouldDisableInput 
+            ? "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your ideas come to life. To get started, please select a new project or create one."
+            : "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your ideas come to life. To get started give me a description of your project.",
           timestamp: new Date()
         };
-        setMessages([welcomeMessage]);
+        
+        if (projectChanged) {
+          setMessages(prevMessages => {
+            if (prevMessages.length === 1 && prevMessages[0].type === 'agent') {
+              return [welcomeMessage];
+            }
+            return prevMessages;
+          });
+        } else if (!hasShownWelcome) {
+          setMessages([welcomeMessage]);
+        }
       }
     }
-  }, [isOpen, hasShownWelcome]);
+  }, [isOpen, hasShownWelcome, shouldDisableInput, selectedProject?.id]);
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -288,11 +313,26 @@ const Agent = () => {
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between dark:text-white px-4 py-3 rounded-t-2xl pt-4">
-            <div className="text-sm font-medium flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] rounded-xl py-1 px-2 cursor-pointer transition-colors">
-              This chat <FaChevronDown className="w-3 h-3" />
+          <div className="flex items-center justify-between dark:text-white px-4 py-3 rounded-t-2xl">
+            <div className="text-sm font-medium flex items-center gap-1.5 rounded-xl py-1 px-2 transition-colors">
+              {selectedProject?.name || 'Archie'}
             </div>
             <div className="flex items-center gap-2">
+
+              {/* Simulation Button */}
+              <button
+                onClick={startSimulation}
+                disabled={isSimulating}
+                className={`p-1 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] rounded-full transition-colors ${
+                  isSimulating 
+                    ? 'dark:bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'cursor-pointer'
+                }`}
+                title={`Simulate ${availableProjectTypes.find(p => p.value === selectedProjectType)?.label} conversation flow`}
+              >
+                <FaRobot className="w-5 h-5 text-gray-600 dark:text-gray-100 pb-0.5" />
+              </button>
+              
               {/* Close Button */}
               <button
                 onClick={() => handleChatBoxToggle(false)}
@@ -368,6 +408,7 @@ const Agent = () => {
             actionOptions={actionOptions}
             actionMenuRef={actionMenuRef}
             shouldFocus={isOpen}
+            disabled={shouldDisableInput}
           />
         </div>
       )}
