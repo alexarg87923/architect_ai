@@ -507,11 +507,15 @@ const Agent = () => {
                 
                 {/* Send Button */}           
                 <button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isTyping}
-                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] disabled:cursor-not-allowed cursor-pointer"
-                    >
-                    <FaCircleArrowUp className="w-5 h-5" />
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isTyping}
+                  className={`p-1 text-gray-400 dark:text-gray-500 transition-colors rounded-lg disabled:cursor-not-allowed ${
+                      !(!inputValue.trim() || isTyping) 
+                          ? 'hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer' 
+                          : 'cursor-not-allowed'
+                  }`}
+                >
+                  <FaCircleArrowUp className="w-5 h-5" />
                 </button>
               </div>
             </div>
