@@ -41,6 +41,56 @@ class LoginResponse(BaseModel):
     user: UserResponse
     message: str
 
+class ChangePasswordRequest(BaseModel):
+    """Change password request model"""
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+class ChangePasswordResponse(BaseModel):
+    """Change password response model"""
+    message: str
+    success: bool
+
+class FeedbackBase(BaseModel):
+    """Base feedback model with common fields"""
+    feedback_type: str  # "general", "bug", "feature", "improvement"
+    message: str
+
+class FeedbackCreate(FeedbackBase):
+    """Model for creating new feedback"""
+    pass
+
+class FeedbackUpdate(BaseModel):
+    """Model for updating feedback (admin use)"""
+    status: Optional[str] = None
+    admin_notes: Optional[str] = None
+
+class Feedback(FeedbackBase):
+    """Complete feedback model with ID and timestamps"""
+    id: int
+    user_id: int
+    status: str
+    admin_notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class FeedbackResponse(BaseModel):
+    """Feedback response model for API responses"""
+    id: int
+    user_id: int
+    feedback_type: str
+    message: str
+    status: str
+    admin_notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    user_email: Optional[str] = None
+    user_name: Optional[str] = None
+
 class ProjectTag(str, Enum):
     """Tags to categorize different parts of student personal projects"""
     SETUP = "setup"
@@ -110,6 +160,48 @@ class Roadmap(BaseModel):
     total_estimated_weeks: Optional[int] = None
     total_estimated_hours: Optional[float] = None
 
+# Task Models
+class TaskBase(BaseModel):
+    """Base task model with common fields"""
+    text: str
+    completed: bool = False
+    task_type: str  # "daily-todos" or "your-ideas"
+
+class TaskCreate(TaskBase):
+    """Model for creating a new task"""
+    pass
+
+class TaskUpdate(BaseModel):
+    """Model for updating a task"""
+    text: Optional[str] = None
+    completed: Optional[bool] = None
+    task_type: Optional[str] = None
+
+class Task(TaskBase):
+    """Complete task model with ID and timestamps"""
+    id: int
+    project_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class TaskResponse(BaseModel):
+    """Task response model for API responses"""
+    id: int
+    project_id: int
+    text: str
+    completed: bool
+    task_type: str
+    created_at: datetime
+    updated_at: datetime
+
+class TasksByType(BaseModel):
+    """Model for grouping tasks by type"""
+    daily_todos: List[TaskResponse] = []
+    your_ideas: List[TaskResponse] = []
+
 # Project Models
 class ProjectBase(BaseModel):
     """Base project model with common fields"""
@@ -146,6 +238,7 @@ class ProjectResponse(BaseModel):
     description: Optional[str] = None
     status: str
     roadmap_data: Optional[Roadmap] = None
+    tasks: Optional[TasksByType] = None
     created_at: datetime
     updated_at: datetime
 

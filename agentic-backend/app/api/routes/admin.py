@@ -8,9 +8,11 @@ import os
 from datetime import datetime
 
 from app.core.database import get_db, User, Project, Conversation, Roadmap
-from app.models.agent import UserCreate
+from app.services.feedback_service import FeedbackService
+from app.models.agent import UserCreate, FeedbackUpdate
 
 router = APIRouter()
+feedback_service = FeedbackService()
 
 @router.get("/users")
 async def get_all_users(db: Session = Depends(get_db)):
@@ -328,3 +330,62 @@ async def system_health(db: Session = Depends(get_db)):
             "error": str(e),
             "timestamp": datetime.now().isoformat()
         }
+
+@router.get("/feedback")
+async def get_all_feedback(db: Session = Depends(get_db)):
+    """Get all feedback (admin use)"""
+    try:
+        feedback_list = feedback_service.get_all_feedback(db)
+        return feedback_list
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch feedback: {str(e)}"
+        )
+
+@router.patch("/feedback/{feedback_id}")
+async def update_feedback(
+    feedback_id: int,
+    feedback_update: FeedbackUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update feedback status and admin notes (admin use)"""
+    try:
+        feedback = feedback_service.update_feedback(db, feedback_id, feedback_update)
+        if not feedback:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Feedback not found"
+            )
+        
+        return feedback
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update feedback: {str(e)}"
+        )
+
+@router.delete("/feedback/{feedback_id}")
+async def delete_feedback(feedback_id: int, db: Session = Depends(get_db)):
+    """Delete feedback (admin use)"""
+    try:
+        success = feedback_service.delete_feedback(db, feedback_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Feedback not found"
+            )
+        
+        return {"message": "Feedback deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete feedback: {str(e)}"
+        )

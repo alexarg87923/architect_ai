@@ -94,3 +94,38 @@ class UserService:
     def user_exists_by_id(self, db: Session, user_id: int) -> bool:
         """Check if user exists by ID"""
         return db.query(UserDB).filter(UserDB.id == user_id).first() is not None
+
+    def update_password(self, db: Session, user_id: int, new_password: str) -> bool:
+        """Update user password"""
+        try:
+            db_user = db.query(UserDB).filter(UserDB.id == user_id).first()
+            if not db_user:
+                return False
+            
+            # Hash the new password
+            password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+            
+            # Update password hash
+            db_user.password_hash = password_hash
+            db_user.updated_at = datetime.utcnow()
+            
+            db.commit()
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            print(f"Error updating password: {e}")
+            return False
+
+    def verify_password(self, password: str, stored_hash: str) -> bool:
+        """Verify a password against its stored hash"""
+        try:
+            # Hash the provided password
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+            
+            # Compare with stored hash
+            return password_hash == stored_hash
+            
+        except Exception as e:
+            print(f"Error verifying password: {e}")
+            return False

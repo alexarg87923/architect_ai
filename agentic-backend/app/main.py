@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import agent, auth, projects, admin
+from app.api.routes import agent, auth, projects, admin, simulation, feedback
 from app.core.config import settings
 from app.core.database import engine, Base
 import logging
@@ -25,7 +25,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,  # From config
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -41,6 +41,8 @@ app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
 app.include_router(projects.router, prefix="/api", tags=["projects"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(simulation.router, prefix="/api", tags=["simulation"])
+app.include_router(feedback.router, prefix="/api/feedback", tags=["feedback"])
 
 @app.get("/")
 async def root():

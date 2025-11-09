@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.core.database import get_db, User as UserDB
 from app.services.user_service import UserService
-from app.models.agent import LoginRequest, UserResponse, User, LoginResponse
+from app.models.agent import LoginRequest, UserResponse, User, LoginResponse, ChangePasswordRequest, ChangePasswordResponse
 from typing import Dict
 
 router = APIRouter()
@@ -82,4 +82,73 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user: {str(e)}"
+        )
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+async def change_password(
+    user_id: int,
+    password_data: ChangePasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Change user password
+    For development, user_id is passed as query parameter
+    """
+    try:
+        # Validate passwords match
+        if password_data.new_password != password_data.confirm_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password and confirm password do not match"
+            )
+        
+        # Validate password length
+        if len(password_data.new_password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 6 characters long"
+            )
+        
+        # Validate current password is provided
+        if not password_data.current_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required"
+            )
+        
+        # Get user from database directly to access password_hash
+        db_user = db.query(UserDB).filter(UserDB.id == user_id).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Verify current password
+        if not user_service.verify_password(password_data.current_password, db_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+        
+        # Update password
+        success = user_service.update_password(db, user_id, password_data.new_password)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update password"
+            )
+        
+        return ChangePasswordResponse(
+            message="Password changed successfully",
+            success=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to change password: {str(e)}"
         )

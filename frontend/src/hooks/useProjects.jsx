@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import ApiClient from '../services/api';
 
 export const useProjects = () => {
@@ -8,6 +9,7 @@ export const useProjects = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { user, isAuthenticated } = useAuth();
+  const { selectedProject, updateSelectedProject } = useSelectedProject();
 
   // Load projects from API when user is authenticated
   useEffect(() => {
@@ -41,7 +43,22 @@ export const useProjects = () => {
         status: project.status,
         createdAt: new Date(project.created_at),
         updatedAt: new Date(project.updated_at),
-        roadmapNodes: project.roadmap_data?.nodes || []
+        roadmapNodes: project.roadmap_data?.nodes || [],
+        tasks: project.tasks ? {
+          "daily-todos": project.tasks.daily_todos.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          })),
+          "your-ideas": project.tasks.your_ideas.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          }))
+        } : {
+          "daily-todos": [],
+          "your-ideas": []
+        }
       }));
       
       setProjects(formattedProjects);
@@ -66,7 +83,7 @@ export const useProjects = () => {
       // Create project via API
       const newProject = await ApiClient.createProject(name, description);
       
-      // Format for frontend
+      // Format for frontend with default tasks
       const formattedProject = {
         id: newProject.id,
         name: newProject.name,
@@ -74,11 +91,26 @@ export const useProjects = () => {
         status: newProject.status,
         createdAt: new Date(newProject.created_at),
         updatedAt: new Date(newProject.updated_at),
-        roadmapNodes: []
+        roadmapNodes: [],
+        tasks: newProject.tasks ? {
+          "daily-todos": newProject.tasks.daily_todos.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          })),
+          "your-ideas": newProject.tasks.your_ideas.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          }))
+        } : {
+          "daily-todos": [],
+          "your-ideas": []
+        }
       };
       
       // Add to local state
-      setProjects(prev => [formattedProject, ...prev]);
+      setProjects(prev => [...prev, formattedProject]);
       setCurrentProject(formattedProject);
       
       return formattedProject;
@@ -112,7 +144,22 @@ export const useProjects = () => {
         status: updatedProject.status,
         createdAt: new Date(updatedProject.created_at),
         updatedAt: new Date(updatedProject.updated_at),
-        roadmapNodes: updatedProject.roadmap_data?.nodes || []
+        roadmapNodes: updatedProject.roadmap_data?.nodes || [],
+        tasks: updatedProject.tasks ? {
+          "daily-todos": updatedProject.tasks.daily_todos.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          })),
+          "your-ideas": updatedProject.tasks.your_ideas.map(task => ({
+            id: task.id,
+            text: task.text,
+            completed: task.completed
+          }))
+        } : {
+          "daily-todos": [],
+          "your-ideas": []
+        }
       };
       
       // Update local state
@@ -122,6 +169,11 @@ export const useProjects = () => {
       
       if (currentProject?.id === projectId) {
         setCurrentProject(formattedProject);
+      }
+      
+      // Update selected project in context if it's the same project
+      if (selectedProject?.id === projectId) {
+        updateSelectedProject(formattedProject);
       }
       
       return formattedProject;
@@ -162,6 +214,212 @@ export const useProjects = () => {
     }
   };
 
+  // Task operations
+  const createTask = async (projectId, text, taskType) => {
+    if (!isAuthenticated || !user) {
+      throw new Error('User must be authenticated to create tasks');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const newTask = await ApiClient.createTask(projectId, text, taskType);
+      
+      // Update local state
+      setProjects(prev => 
+        prev.map(project => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              tasks: {
+                ...project.tasks,
+                [taskType]: [...project.tasks[taskType], {
+                  id: newTask.id,
+                  text: newTask.text,
+                  completed: newTask.completed
+                }]
+              }
+            };
+          }
+          return project;
+        })
+      );
+      
+      // Update current project if it's the one being modified
+      if (currentProject?.id === projectId) {
+        const updatedCurrentProject = {
+          ...currentProject,
+          tasks: {
+            ...currentProject.tasks,
+            [taskType]: [...currentProject.tasks[taskType], {
+              id: newTask.id,
+              text: newTask.text,
+              completed: newTask.completed
+            }]
+          }
+        };
+        setCurrentProject(updatedCurrentProject);
+      }
+      
+      // Update selected project in context if it's the same project
+      if (selectedProject?.id === projectId) {
+        const updatedSelectedProject = {
+          ...selectedProject,
+          tasks: {
+            ...selectedProject.tasks,
+            [taskType]: [...selectedProject.tasks[taskType], {
+              id: newTask.id,
+              text: newTask.text,
+              completed: newTask.completed
+            }]
+          }
+        };
+        updateSelectedProject(updatedSelectedProject);
+      }
+      
+      return newTask;
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTask = async (projectId, taskId, updates) => {
+    if (!isAuthenticated || !user) {
+      throw new Error('User must be authenticated to update tasks');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const updatedTask = await ApiClient.updateTask(projectId, taskId, updates);
+      
+      // Update local state
+      setProjects(prev => 
+        prev.map(project => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              tasks: {
+                "daily-todos": project.tasks["daily-todos"].map(task => 
+                  task.id === taskId ? { ...task, ...updates } : task
+                ),
+                "your-ideas": project.tasks["your-ideas"].map(task => 
+                  task.id === taskId ? { ...task, ...updates } : task
+                )
+              }
+            };
+          }
+          return project;
+        })
+      );
+      
+      // Update current project if it's the one being modified
+      if (currentProject?.id === projectId) {
+        const updatedCurrentProject = {
+          ...currentProject,
+          tasks: {
+            "daily-todos": currentProject.tasks["daily-todos"].map(task => 
+              task.id === taskId ? { ...task, ...updates } : task
+            ),
+            "your-ideas": currentProject.tasks["your-ideas"].map(task => 
+              task.id === taskId ? { ...task, ...updates } : task
+            )
+          }
+        };
+        setCurrentProject(updatedCurrentProject);
+      }
+      
+      // Update selected project in context if it's the same project
+      if (selectedProject?.id === projectId) {
+        const updatedSelectedProject = {
+          ...selectedProject,
+          tasks: {
+            "daily-todos": selectedProject.tasks["daily-todos"].map(task => 
+              task.id === taskId ? { ...task, ...updates } : task
+            ),
+            "your-ideas": selectedProject.tasks["your-ideas"].map(task => 
+              task.id === taskId ? { ...task, ...updates } : task
+            )
+          }
+        };
+        updateSelectedProject(updatedSelectedProject);
+      }
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTask = async (projectId, taskId, taskType) => {
+    if (!isAuthenticated || !user) {
+      throw new Error('User must be authenticated to delete tasks');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await ApiClient.deleteTask(projectId, taskId);
+      
+      // Update local state
+      setProjects(prev => 
+        prev.map(project => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              tasks: {
+                ...project.tasks,
+                [taskType]: project.tasks[taskType].filter(task => task.id !== taskId)
+              }
+            };
+          }
+          return project;
+        })
+      );
+      
+      // Update current project if it's the one being modified
+      if (currentProject?.id === projectId) {
+        const updatedCurrentProject = {
+          ...currentProject,
+          tasks: {
+            ...currentProject.tasks,
+            [taskType]: currentProject.tasks[taskType].filter(task => task.id !== taskId)
+          }
+        };
+        setCurrentProject(updatedCurrentProject);
+      }
+      
+      // Update selected project in context if it's the same project
+      if (selectedProject?.id === projectId) {
+        const updatedSelectedProject = {
+          ...selectedProject,
+          tasks: {
+            ...selectedProject.tasks,
+            [taskType]: selectedProject.tasks[taskType].filter(task => task.id !== taskId)
+          }
+        };
+        updateSelectedProject(updatedSelectedProject);
+      }
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const selectProject = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     setCurrentProject(project || null);
@@ -179,6 +437,9 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
+    createTask,
+    updateTask,
+    deleteTask,
     selectProject,
     setCurrentProject,
     refreshProjects

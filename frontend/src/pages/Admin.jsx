@@ -11,7 +11,9 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Key
+  Key,
+  MessageSquare,
+  Edit
 } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -21,6 +23,7 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [analytics, setAnalytics] = useState({});
+  const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -30,6 +33,7 @@ const Admin = () => {
     loadUsers();
     loadProjects();
     loadAnalytics();
+    loadFeedback();
   }, []);
 
   const loadUsers = async () => {
@@ -68,9 +72,22 @@ const Admin = () => {
     }
   };
 
+  const loadFeedback = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/feedback`);
+      if (response.ok) {
+        const data = await response.json();
+        setFeedback(data);
+      }
+    } catch (error) {
+      console.error('Failed to load feedback:', error);
+    }
+  };
+
   const tabs = [
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'projects', label: 'Projects', icon: Activity },
+    { id: 'feedback', label: 'Feedback', icon: MessageSquare },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'system', label: 'System', icon: Settings }
   ];
@@ -126,6 +143,11 @@ const Admin = () => {
         {activeTab === 'projects' && <ProjectManagement 
           projects={projects}
           onRefresh={loadProjects}
+        />}
+        
+        {activeTab === 'feedback' && <FeedbackManagement 
+          feedback={feedback}
+          onRefresh={loadFeedback}
         />}
         
         {activeTab === 'analytics' && <AnalyticsDashboard 
@@ -351,7 +373,7 @@ const CreateUserModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Create New User
@@ -458,7 +480,7 @@ const UserDetailsModal = ({ user, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -623,6 +645,344 @@ const ProjectManagement = ({ projects, onRefresh }) => {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+};
+
+// Feedback Management Component
+const FeedbackManagement = ({ feedback, onRefresh }) => {
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!confirm('Are you sure you want to delete this feedback? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/feedback/${feedbackId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        onRefresh();
+      } else {
+        alert('Failed to delete feedback');
+      }
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      alert('Failed to delete feedback');
+    }
+  };
+
+  const handleUpdateFeedback = async (feedbackId, status, adminNotes) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/feedback/${feedbackId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, admin_notes: adminNotes }),
+      });
+      
+      if (response.ok) {
+        onRefresh();
+        setShowUpdateModal(false);
+        setSelectedFeedback(null);
+      } else {
+        alert('Failed to update feedback');
+      }
+    } catch (error) {
+      console.error('Error updating feedback:', error);
+      alert('Failed to update feedback');
+    }
+  };
+
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback);
+    setShowViewModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'reviewed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'resolved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'closed': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'bug': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'feature': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'improvement': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+      case 'general': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Feedback Management
+        </h2>
+        <button
+          onClick={onRefresh}
+          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Feedback Table */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+          <thead className="bg-gray-50 dark:bg-[#3C3C3C]">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                User
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Message
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Actions (View/Edit/Delete)
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#2a2a2a] divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+            {feedback.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-[#3C3C3C]">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {item.user_name || 'Unknown'}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {item.user_email}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(item.feedback_type)}`}>
+                    {item.feedback_type}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 dark:text-white max-w-xs">
+                    <div className="truncate">
+                      {item.message}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.status)}`}>
+                    {item.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(item.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleViewFeedback(item)}
+                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                      title="View details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedFeedback(item);
+                        setShowUpdateModal(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFeedback(item.id)}
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Update Feedback Modal */}
+      {showUpdateModal && selectedFeedback && (
+        <div className="fixed inset-0 bg-gray-600/75 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-[#2a2a2a]">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Update Feedback
+              </h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-[#3C3C3C] dark:text-white"
+                  defaultValue={selectedFeedback.status}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Admin Notes
+                </label>
+                <textarea
+                  id="adminNotes"
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-[#3C3C3C] dark:text-white"
+                  placeholder="Add admin notes..."
+                  defaultValue={selectedFeedback.admin_notes || ''}
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowUpdateModal(false);
+                    setSelectedFeedback(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#3C3C3C] rounded-md hover:bg-gray-200 dark:hover:bg-[#4C4C4C]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const status = document.getElementById('status').value;
+                    const adminNotes = document.getElementById('adminNotes').value;
+                    handleUpdateFeedback(selectedFeedback.id, status, adminNotes);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Feedback Modal */}
+      {showViewModal && viewingFeedback && (
+        <div className="fixed inset-0 bg-gray-600/75 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white dark:bg-[#2a2a2a]">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Feedback Details
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setViewingFeedback(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* User Info */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">User Information</h4>
+                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-md">
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      <strong>Name:</strong> {viewingFeedback.user_name || 'Unknown'}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Email:</strong> {viewingFeedback.user_email}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Submitted:</strong> {new Date(viewingFeedback.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feedback Type & Status */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</h4>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(viewingFeedback.feedback_type)}`}>
+                      {viewingFeedback.feedback_type}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</h4>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(viewingFeedback.status)}`}>
+                      {viewingFeedback.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Full Message */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</h4>
+                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-md">
+                    <div className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                      {viewingFeedback.message}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Notes */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes</h4>
+                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-md">
+                    {viewingFeedback.admin_notes ? (
+                      <div className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                        {viewingFeedback.admin_notes}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                        No admin notes yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Last Updated */}
+                {viewingFeedback.updated_at && viewingFeedback.updated_at !== viewingFeedback.created_at && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Last updated: {new Date(viewingFeedback.updated_at).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

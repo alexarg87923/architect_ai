@@ -4,6 +4,7 @@ import { HiOutlineMap, HiOutlineMoon, HiDotsHorizontal, HiOutlineSun } from 'rea
 import NewProjectModal from './modals/NewProjectModal';
 import ProjectMenuModal from './modals/ProjectMenuModal';
 import ProfileMenuModal from './modals/ProfileMenuModal';
+import SettingsModal from './modals/SettingsModal';
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import { useProjects } from '../hooks/useProjects';
 import { useSelectedProject } from '../contexts/SelectedProjectContext';
@@ -22,6 +23,7 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
 
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, project: null });
   const [editingProject, setEditingProject] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -102,6 +104,14 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
 
   const closeUserMenu = () => {
     setShowUserMenu(false);
+  };
+
+  const openSettings = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const closeSettings = () => {
+    setIsSettingsOpen(false);
   };
 
   return (
@@ -238,6 +248,7 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
                         user={user}
                         onClose={closeUserMenu}
                         onLogout={handleLogout}
+                        onOpenSettings={openSettings}
                     />
                 </div>
             </div>
@@ -252,6 +263,12 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
         onClose={closeContextMenu}
         onRename={startRename}
         onDelete={handleDelete}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={closeSettings}
       />
     </>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlus } from 'react-icons/fa';
+import { HiDotsHorizontal } from 'react-icons/hi';
 
 function TaskItem({ task, onToggle, sectionKey, editingTaskId, editingText, setEditingText, cancelRename, saveRename, setContextMenu }) {
     const inputRef = useRef(null);
@@ -36,7 +37,7 @@ function TaskItem({ task, onToggle, sectionKey, editingTaskId, editingText, setE
                 }}
             >
                 <button
-                    onClick={() => onToggle(task.id)}
+                    onClick={() => onToggle(task)}
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         task.completed
                             ? 'bg-green-500 border-green-500'
@@ -65,7 +66,24 @@ function TaskItem({ task, onToggle, sectionKey, editingTaskId, editingText, setE
     );
 }
 
-const TaskSection = ({ title, placeholderText, sectionKey, tasks, icon: Icon, color = "blue", setTasks, editingTaskId, editingText, editingSectionKey, setEditingText, cancelRename, saveRename, setContextMenu }) => {
+const TaskSection = ({ 
+    title, 
+    placeholderText, 
+    sectionKey, 
+    tasks, 
+    icon: Icon, 
+    color = "blue", 
+    editingTaskId, 
+    editingText, 
+    editingSectionKey, 
+    setEditingText, 
+    cancelRename, 
+    saveRename, 
+    setContextMenu,
+    onAddTask,
+    onToggleTask,
+    loading = false
+}) => {
     const [adding, setAdding] = useState(false);
     const [input, setInput] = useState("");
     const inputRef = useRef(null);
@@ -87,29 +105,26 @@ const TaskSection = ({ title, placeholderText, sectionKey, tasks, icon: Icon, co
         return () => document.removeEventListener('mousedown', handleClick);
     }, [adding]);
 
-    const handleAdd = () => {
-        if (input.trim() === "") return;
+    const handleAdd = async () => {
+        if (input.trim() === "" || !onAddTask) return;
 
-        setTasks(prev => {
-            const key = sectionKey;
-            const nextId = Math.max(0, ...(prev[key] || []).map(t => t.id)) + 1;
-            return {
-                ...prev,
-                [key]: [
-                    ...(prev[key] || []),
-                    { id: nextId, text: input, completed: false }
-                ]
-            };
-        });
-        setInput("");
-        setAdding(false);
+        try {
+            await onAddTask(sectionKey, input.trim());
+            setInput("");
+            setAdding(false);
+        } catch (error) {
+            console.error('Failed to add task:', error);
+        }
     };
 
     return (
         <div className="mb-6">
-            <div className={`flex items-center space-x-2 mb-3 ml-2 text-${color}-600 dark:text-${color}-400`}>
-                <Icon className="w-4 h-4" />
-                <h3 className="font-semibold text-sm">{title}</h3>
+            <div className={`flex justify-between mb-3 ml-2 text-${color}-600 dark:text-${color}-400`}>
+                <div className='flex items-center space-x-2'>
+                    <Icon className="w-4 h-4" />
+                    <h3 className="font-semibold text-sm">{title}</h3>
+                </div>
+                <HiDotsHorizontal className="w-5 h-5 text-gray-400 dark:text-gray-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#3A3A3A] p-0.5 rounded-sm" />
             </div>
             {adding ? (
                 <div ref={addBoxRef} className="flex items-center space-x-2 p-2 w-full bg-gray-50 dark:bg-[#3A3A3A] rounded-lg">
@@ -123,12 +138,14 @@ const TaskSection = ({ title, placeholderText, sectionKey, tasks, icon: Icon, co
                             if (e.key === 'Enter') handleAdd();
                             if (e.key === 'Escape') { setAdding(false); setInput(""); }
                         }}
+                        disabled={loading}
                     />
                 </div>
             ) : (
                 <button
-                    className="flex items-center space-x-2 p-2 w-full text-left text-gray-500 dark:text-gray-400 rounded-lg bg-gray-50 dark:bg-[#3A3A3A] cursor-pointer"
+                    className="flex items-center space-x-2 p-2 w-full text-left text-gray-500 dark:text-gray-400 rounded-lg bg-gray-50 dark:bg-[#3A3A3A] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => setAdding(true)}
+                    disabled={loading}
                 >
                     <FaPlus className="w-3 h-3" />
                     <span className="text-sm">{placeholderText}</span>
@@ -139,14 +156,7 @@ const TaskSection = ({ title, placeholderText, sectionKey, tasks, icon: Icon, co
                     <TaskItem
                         key={`${task.id}-${editingTaskId === task.id ? 'editing' : 'normal'}`}
                         task={task}
-                        onToggle={(id) => {
-                            setTasks(prev => ({
-                                ...prev,
-                                [sectionKey]: (prev[sectionKey] || []).map(t =>
-                                    t.id === id ? { ...t, completed: !t.completed } : t
-                                )
-                            }));
-                        }}
+                        onToggle={onToggleTask}
                         sectionKey={sectionKey}
                         editingTaskId={editingSectionKey === sectionKey ? editingTaskId : null}
                         editingText={editingText}

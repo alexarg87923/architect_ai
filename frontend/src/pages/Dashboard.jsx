@@ -5,7 +5,7 @@ import { Canvas } from "../components/Canvas";
 import { useSelectedProject } from "../contexts/SelectedProjectContext";
 import { useState, useEffect } from "react";
 
-function Index({ isDark, toggleTheme }) {
+function Dashboard({ isDark, toggleTheme }) {
     const { selectedProject, updateRoadmapNodes } = useSelectedProject();
     
     // Manage sidebar collapsed state
@@ -53,4 +53,4 @@ function Index({ isDark, toggleTheme }) {
     )
 }
 
-export default Index;
+export default Dashboard;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ const Login = () => {
 
     try {
       await login(email, password);
-      navigate('/'); // Redirect to main app after successful login
+      navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
       console.error('Login failed:', error);
     } finally {
@@ -145,8 +145,17 @@ const Login = () => {
           </div>
         </form>
 
-        <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400 mb-4">
           Development Mode - No signup required
+        </div>
+        
+        <div className="text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </Link>
         </div>
       </div>
     </div>

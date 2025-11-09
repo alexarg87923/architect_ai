@@ -2,12 +2,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.models.agent import ProjectCreate, ProjectUpdate, ProjectResponse, Roadmap
+from app.models.agent import ProjectCreate, ProjectUpdate, ProjectResponse, Roadmap, TaskCreate, TaskUpdate, TaskResponse, TasksByType
 from app.services.project_service import ProjectService
+from app.services.task_service import TaskService
 from app.services.user_service import UserService
 
 router = APIRouter()
 project_service = ProjectService()
+task_service = TaskService()
 user_service = UserService()
 
 def get_current_user_id(user_id: int = None) -> int:
@@ -31,6 +33,31 @@ async def create_project(
         # Create project
         db_project = project_service.create_project(db, project, user_id)
         
+        # Get tasks for this project (including the default tasks that were created)
+        tasks_by_type = task_service.get_project_tasks(db, db_project.id)
+        
+        # Convert tasks to response format
+        tasks_response = TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["your-ideas"]]
+        )
+        
         # Convert to response format
         return ProjectResponse(
             id=db_project.id,
@@ -38,6 +65,7 @@ async def create_project(
             description=db_project.description,
             status=db_project.status,
             roadmap_data=None,  # New projects start with no roadmap
+            tasks=tasks_response,  # Include the default tasks
             created_at=db_project.created_at,
             updated_at=db_project.updated_at
         )
@@ -59,19 +87,46 @@ async def get_user_projects(
         # Get projects
         projects = project_service.get_user_projects(db, user_id)
         
-        # Convert to response format
-        return [
-            ProjectResponse(
+        # Convert to response format with tasks
+        response_projects = []
+        for project in projects:
+            # Get tasks for this project
+            tasks_by_type = task_service.get_project_tasks(db, project.id)
+            
+            # Convert tasks to response format
+            tasks_response = TasksByType(
+                daily_todos=[TaskResponse(
+                    id=task.id,
+                    project_id=task.project_id,
+                    text=task.text,
+                    completed=task.completed,
+                    task_type=task.task_type,
+                    created_at=task.created_at,
+                    updated_at=task.updated_at
+                ) for task in tasks_by_type["daily-todos"]],
+                your_ideas=[TaskResponse(
+                    id=task.id,
+                    project_id=task.project_id,
+                    text=task.text,
+                    completed=task.completed,
+                    task_type=task.task_type,
+                    created_at=task.created_at,
+                    updated_at=task.updated_at
+                ) for task in tasks_by_type["your-ideas"]]
+            )
+            
+            response_projects.append(ProjectResponse(
                 id=project.id,
                 name=project.name,
                 description=project.description,
                 status=project.status,
                 roadmap_data=Roadmap(**project.roadmap_data) if project.roadmap_data else None,
+                tasks=tasks_response,
                 created_at=project.created_at,
                 updated_at=project.updated_at
-            )
-            for project in projects
-        ]
+            ))
+        
+        return response_projects
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching projects: {str(e)}")
@@ -88,12 +143,38 @@ async def get_project(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         
+        # Get tasks for this project
+        tasks_by_type = task_service.get_project_tasks(db, project.id)
+        
+        # Convert tasks to response format
+        tasks_response = TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["your-ideas"]]
+        )
+        
         return ProjectResponse(
             id=project.id,
             name=project.name,
             description=project.description,
             status=project.status,
             roadmap_data=Roadmap(**project.roadmap_data) if project.roadmap_data else None,
+            tasks=tasks_response,
             created_at=project.created_at,
             updated_at=project.updated_at
         )
@@ -114,12 +195,38 @@ async def update_project(
         if not updated_project:
             raise HTTPException(status_code=404, detail="Project not found")
         
+        # Get tasks for this project
+        tasks_by_type = task_service.get_project_tasks(db, updated_project.id)
+        
+        # Convert tasks to response format
+        tasks_response = TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["your-ideas"]]
+        )
+        
         return ProjectResponse(
             id=updated_project.id,
             name=updated_project.name,
             description=updated_project.description,
             status=updated_project.status,
             roadmap_data=Roadmap(**updated_project.roadmap_data) if updated_project.roadmap_data else None,
+            tasks=tasks_response,
             created_at=updated_project.created_at,
             updated_at=updated_project.updated_at
         )
@@ -157,15 +264,170 @@ async def update_project_roadmap(
         if not updated_project:
             raise HTTPException(status_code=404, detail="Project not found")
         
+        # Get tasks for this project
+        tasks_by_type = task_service.get_project_tasks(db, updated_project.id)
+        
+        # Convert tasks to response format
+        tasks_response = TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["your-ideas"]]
+        )
+        
         return ProjectResponse(
             id=updated_project.id,
             name=updated_project.name,
             description=updated_project.description,
             status=updated_project.status,
             roadmap_data=Roadmap(**updated_project.roadmap_data) if updated_project.roadmap_data else None,
+            tasks=tasks_response,
             created_at=updated_project.created_at,
             updated_at=updated_project.updated_at
         )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating project roadmap: {str(e)}")
+
+# Task endpoints
+@router.post("/projects/{project_id}/tasks", response_model=TaskResponse)
+async def create_task(
+    project_id: int,
+    task: TaskCreate,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Create a new task for a project"""
+    try:
+        # Verify project exists and belongs to user
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Validate task type
+        if task.task_type not in ["daily-todos", "your-ideas"]:
+            raise HTTPException(status_code=400, detail="Task type must be 'daily-todos' or 'your-ideas'")
+        
+        # Create task
+        db_task = task_service.create_task(db, task, project_id)
+        
+        return TaskResponse(
+            id=db_task.id,
+            project_id=db_task.project_id,
+            text=db_task.text,
+            completed=db_task.completed,
+            task_type=db_task.task_type,
+            created_at=db_task.created_at,
+            updated_at=db_task.updated_at
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating task: {str(e)}")
+
+@router.put("/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    project_id: int,
+    task_id: int,
+    task_update: TaskUpdate,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Update a task"""
+    try:
+        # Verify project exists and belongs to user
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Update task
+        updated_task = task_service.update_task(db, task_id, project_id, task_update)
+        if not updated_task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        return TaskResponse(
+            id=updated_task.id,
+            project_id=updated_task.project_id,
+            text=updated_task.text,
+            completed=updated_task.completed,
+            task_type=updated_task.task_type,
+            created_at=updated_task.created_at,
+            updated_at=updated_task.updated_at
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating task: {str(e)}")
+
+@router.delete("/projects/{project_id}/tasks/{task_id}")
+async def delete_task(
+    project_id: int,
+    task_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete a task"""
+    try:
+        # Verify project exists and belongs to user
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Delete task
+        success = task_service.delete_task(db, task_id, project_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        return {"message": f"Task {task_id} deleted successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting task: {str(e)}")
+
+@router.get("/projects/{project_id}/tasks", response_model=TasksByType)
+async def get_project_tasks(
+    project_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get all tasks for a project"""
+    try:
+        # Verify project exists and belongs to user
+        if not project_service.project_exists(db, project_id, user_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Get tasks
+        tasks_by_type = task_service.get_project_tasks(db, project_id)
+        
+        # Convert to response format
+        return TasksByType(
+            daily_todos=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["daily-todos"]],
+            your_ideas=[TaskResponse(
+                id=task.id,
+                project_id=task.project_id,
+                text=task.text,
+                completed=task.completed,
+                task_type=task.task_type,
+                created_at=task.created_at,
+                updated_at=task.updated_at
+            ) for task in tasks_by_type["your-ideas"]]
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching tasks: {str(e)}")

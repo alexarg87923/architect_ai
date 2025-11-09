@@ -26,7 +26,17 @@ class ApiClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Try to get the error detail from the response
+        let errorDetail = response.statusText;
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorDetail = errorData.detail;
+          }
+        } catch (e) {
+          // If we can't parse the error response, use the status text
+        }
+        throw new Error(`HTTP ${response.status}: ${errorDetail}`);
       }
 
       const data = await response.json();
@@ -60,6 +70,38 @@ class ApiClient {
       actionButton: response.action_button,
       currentRoadmap: response.conversation_state?.current_roadmap,
       phase: response.conversation_state?.phase,
+    };
+  }
+
+  // Simulation API Methods
+  async getProjectOptions() {
+    const response = await this.request('/api/simulation/project-options', {
+      method: 'GET',
+    });
+    
+    return {
+      success: response.success,
+      projectOptions: response.project_options
+    };
+  }
+
+  async runSimulation(projectId, projectType = 'codementor') {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await this.request(`/api/simulation/run?user_id=${parseInt(userId)}&project_id=${projectId}&project_type=${projectType}`, {
+      method: 'POST',
+    });
+    
+    return {
+      success: response.success,
+      sessionId: response.session_id,
+      conversationState: response.conversation_state,
+      messages: response.messages,
+      roadmap: response.roadmap,
+      totalRounds: response.total_rounds
     };
   }
 
@@ -178,6 +220,137 @@ class ApiClient {
       method: 'PUT',
       body: roadmap
     });
+  }
+
+  // Task API Methods
+  async createTask(projectId, text, taskType) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    return this.request(`/api/projects/${projectId}/tasks?user_id=${userId}`, {
+      method: 'POST',
+      body: {
+        text,
+        task_type: taskType,
+        completed: false
+      }
+    });
+  }
+
+  async updateTask(projectId, taskId, updates) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    return this.request(`/api/projects/${projectId}/tasks/${taskId}?user_id=${userId}`, {
+      method: 'PUT',
+      body: updates
+    });
+  }
+
+  async deleteTask(projectId, taskId) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    return this.request(`/api/projects/${projectId}/tasks/${taskId}?user_id=${userId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getProjectTasks(projectId) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await this.request(`/api/projects/${projectId}/tasks?user_id=${parseInt(userId)}`, {
+      method: 'GET',
+    });
+    
+    return response;
+  }
+
+  // Auth API Methods
+  async changePassword(currentPassword, newPassword, confirmPassword) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await this.request(`/api/auth/change-password?user_id=${parseInt(userId)}`, {
+      method: 'POST',
+      body: {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      },
+    });
+    
+    return response;
+  }
+
+  // Feedback API Methods
+  async submitFeedback(feedbackType, message) {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await this.request(`/api/feedback/submit?user_id=${parseInt(userId)}`, {
+      method: 'POST',
+      body: {
+        feedback_type: feedbackType,
+        message: message
+      },
+    });
+    
+    return response;
+  }
+
+  async getUserFeedback() {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await this.request(`/api/feedback/user?user_id=${parseInt(userId)}`, {
+      method: 'GET',
+    });
+    
+    return response;
+  }
+
+  async getAllFeedback() {
+    const response = await this.request('/api/admin/feedback', {
+      method: 'GET',
+    });
+    
+    return response;
+  }
+
+  async updateFeedback(feedbackId, status, adminNotes) {
+    const response = await this.request(`/api/admin/feedback/${feedbackId}`, {
+      method: 'PATCH',
+      body: {
+        status: status,
+        admin_notes: adminNotes
+      },
+    });
+    
+    return response;
+  }
+
+  async deleteFeedback(feedbackId) {
+    const response = await this.request(`/api/admin/feedback/${feedbackId}`, {
+      method: 'DELETE',
+    });
+    
+    return response;
   }
 
   // Utility methods for roadmap data processing

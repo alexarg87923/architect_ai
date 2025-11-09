@@ -3,6 +3,7 @@ import { FaChevronLeft, FaChevronRight, FaLightbulb } from 'react-icons/fa';
 import { PiCoffeeFill } from "react-icons/pi";
 import SmartTabItemModal from './modals/SmartTabItemModal';
 import TaskSection from './TaskSection';
+import { useProjects } from '../hooks/useProjects';
 
 const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
     const [isTaskCollapsed, setIsTaskCollapsed] = useState(() => {
@@ -15,6 +16,8 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
         }
     });
 
+    const { createTask, updateTask, deleteTask, loading, error } = useProjects();
+
     useEffect(() => {
         try {
             localStorage.setItem('task-sidebar-collapsed', JSON.stringify(isTaskCollapsed));
@@ -23,22 +26,23 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
         }
     }, [isTaskCollapsed]);
 
-    // Mock tasks data -- NEED to be replaced with actual data fetching logic
+    // Use real tasks from selected project instead of mock data
     const [tasks, setTasks] = useState({
-         "daily-todos": [
-            { id: 1, text: "Catch up with Joseph", completed: false },
-            { id: 2, text: "Watch documentary", completed: false },
-            { id: 3, text: "Fix the room lighting", completed: false },
-            { id: 4, text: "Provide feedback on Emily's designs", completed: false },
-            { id: 5, text: "Buy new sweatshirts", completed: false },
-        ],
-        "your-ideas": [
-            { id: 6, text: "Read 20 pages", completed: false },
-            { id: 7, text: "Buy a gift from the mall for friend", completed: false },
-            { id: 8, text: "Ask landlord about rent", completed: false },
-            { id: 9, text: "Design 2024 family calendar", completed: false },
-        ]
+        "daily-todos": [],
+        "your-ideas": []
     });
+
+    // Update tasks when selected project changes
+    useEffect(() => {
+        if (selectedProject && selectedProject.tasks) {
+            setTasks(selectedProject.tasks);
+        } else {
+            setTasks({
+                "daily-todos": [],
+                "your-ideas": []
+            });
+        }
+    }, [selectedProject]);
 
     const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, task: null, sectionKey: null });
     const [editingTaskId, setEditingTaskId] = useState(null);
@@ -51,12 +55,20 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
         setEditingSectionKey(null);
     };
 
-    const saveRename = (sectionKey, task) => {
-        setTasks(prev => ({
-            ...prev,
-            [sectionKey]: prev[sectionKey].map(t => t.id === task.id ? { ...t, text: editingText } : t)
-        }));
-        cancelRename();
+    const saveRename = async (sectionKey, task) => {
+        if (!selectedProject) return;
+        
+        try {
+            await updateTask(selectedProject.id, task.id, { text: editingText });
+            // Update local state immediately after successful API call
+            setTasks(prev => ({
+                ...prev,
+                [sectionKey]: prev[sectionKey].map(t => t.id === task.id ? { ...t, text: editingText } : t)
+            }));
+            cancelRename();
+        } catch (error) {
+            console.error('Failed to update task:', error);
+        }
     };
 
     const closeContextMenu = () => setContextMenu({ show: false, x: 0, y: 0, task: null, sectionKey: null });
@@ -70,12 +82,56 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
         closeContextMenu();
     };
 
-    const handleDelete = (sectionKey, task) => {
-        setTasks(prev => ({
-            ...prev,
-            [sectionKey]: prev[sectionKey].filter(t => t.id !== task.id)
-        }));
-        closeContextMenu();
+    const handleDelete = async (sectionKey, task) => {
+        if (!selectedProject) return;
+        
+        try {
+            await deleteTask(selectedProject.id, task.id, sectionKey);
+            // Update local state immediately after successful API call
+            setTasks(prev => ({
+                ...prev,
+                [sectionKey]: prev[sectionKey].filter(t => t.id !== task.id)
+            }));
+            closeContextMenu();
+        } catch (error) {
+            console.error('Failed to delete task:', error);
+        }
+    };
+
+    const handleAddTask = async (sectionKey, text) => {
+        if (!selectedProject || !text.trim()) return;
+        
+        try {
+            const newTask = await createTask(selectedProject.id, text.trim(), sectionKey);
+            // Update local state immediately after successful API call
+            setTasks(prev => ({
+                ...prev,
+                [sectionKey]: [...prev[sectionKey], {
+                    id: newTask.id,
+                    text: newTask.text,
+                    completed: newTask.completed
+                }]
+            }));
+        } catch (error) {
+            console.error('Failed to create task:', error);
+        }
+    };
+
+    const handleToggleTask = async (sectionKey, task) => {
+        if (!selectedProject) return;
+        
+        try {
+            await updateTask(selectedProject.id, task.id, { completed: !task.completed });
+            // Update local state immediately after successful API call
+            setTasks(prev => ({
+                ...prev,
+                [sectionKey]: prev[sectionKey].map(t => 
+                    t.id === task.id ? { ...t, completed: !t.completed } : t
+                )
+            }));
+        } catch (error) {
+            console.error('Failed to toggle task:', error);
+        }
     };
 
     return (
@@ -105,7 +161,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                     <>
                         {/* Overlay for mobile */}
                         <div
-                            className="fixed top-20 left-0 inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+                            className="fixed top-20 left-0 inset-0 bg-black/50 z-20 md:hidden"
                             onClick={() => setIsTaskCollapsed(true)}
                         />
                         
@@ -128,13 +184,12 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                             <div className="p-4">
                                 {/* Todos Section */}      
                                 <TaskSection
-                                    title="Today Todos"
+                                    title="Today's Todos"
                                     placeholderText="Add todos here"
                                     sectionKey="daily-todos"
                                     tasks={tasks["daily-todos"]}
                                     icon={PiCoffeeFill}
                                     color="gray"
-                                    setTasks={setTasks}
                                     editingTaskId={editingTaskId}
                                     editingText={editingText}
                                     editingSectionKey={editingSectionKey}
@@ -142,6 +197,9 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     cancelRename={cancelRename}
                                     saveRename={saveRename}
                                     setContextMenu={setContextMenu}
+                                    onAddTask={handleAddTask}
+                                    onToggleTask={handleToggleTask}
+                                    loading={loading}
                                 />
 
                                 {/* Ideas Section */}
@@ -152,7 +210,6 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     tasks={tasks["your-ideas"]}
                                     icon={FaLightbulb}
                                     color="gray"
-                                    setTasks={setTasks}
                                     editingTaskId={editingTaskId}
                                     editingText={editingText}
                                     editingSectionKey={editingSectionKey}
@@ -160,6 +217,9 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     cancelRename={cancelRename}
                                     saveRename={saveRename}
                                     setContextMenu={setContextMenu}
+                                    onAddTask={handleAddTask}
+                                    onToggleTask={handleToggleTask}
+                                    loading={loading}
                                 />
                             </div>
                         </div>
@@ -168,7 +228,7 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                     <>
                         {/* Overlay for mobile */}
                         <div
-                            className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+                            className="fixed inset-0 bg-black/50 z-20 md:hidden"
                             onClick={() => setIsTaskCollapsed(true)}
                         />
                         
@@ -198,13 +258,12 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
 
                                 {/* Todos Section */}      
                                 <TaskSection
-                                    title="Today Todos"
+                                    title="Today's Todos"
                                     placeholderText="Add todos here"
                                     sectionKey="daily-todos"
                                     tasks={tasks["daily-todos"]}
                                     icon={PiCoffeeFill}
                                     color="gray"
-                                    setTasks={setTasks}
                                     editingTaskId={editingTaskId}
                                     editingText={editingText}
                                     editingSectionKey={editingSectionKey}
@@ -212,6 +271,9 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     cancelRename={cancelRename}
                                     saveRename={saveRename}
                                     setContextMenu={setContextMenu}
+                                    onAddTask={handleAddTask}
+                                    onToggleTask={handleToggleTask}
+                                    loading={loading}
                                 />
 
                                 {/* Ideas Section */}
@@ -222,7 +284,6 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     tasks={tasks["your-ideas"]}
                                     icon={FaLightbulb}
                                     color="gray"
-                                    setTasks={setTasks}
                                     editingTaskId={editingTaskId}
                                     editingText={editingText}
                                     editingSectionKey={editingSectionKey}
@@ -230,6 +291,9 @@ const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
                                     cancelRename={cancelRename}
                                     saveRename={saveRename}
                                     setContextMenu={setContextMenu}
+                                    onAddTask={handleAddTask}
+                                    onToggleTask={handleToggleTask}
+                                    loading={loading}
                                 />
                             </div>
                         </div>

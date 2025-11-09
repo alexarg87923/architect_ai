@@ -37,6 +37,10 @@ export const ProjectProvider = ({ children }) => {
     setSelectedProject(null);
   };
 
+  const updateSelectedProject = (updatedProject) => {
+    setSelectedProject(updatedProject);
+  };
+
   const updateRoadmapNodes = (updatedNodes) => {
     if (selectedProject) {
       setSelectedProject({
@@ -51,6 +55,7 @@ export const ProjectProvider = ({ children }) => {
       selectedProject,
       selectProject,
       clearSelection,
+      updateSelectedProject,
       updateRoadmapNodes
     }}>
       {children}

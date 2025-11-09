@@ -82,6 +82,36 @@ class Project(Base):
     # Relationships
     user = relationship("User", back_populates="projects")
     conversations = relationship("Conversation", back_populates="project")
+    tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+
+class Task(Base):
+    __tablename__ = "tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    text = Column(Text, nullable=False)
+    completed = Column(Boolean, default=False)
+    task_type = Column(String, nullable=False)  # "daily-todos" or "your-ideas"
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    project = relationship("Project", back_populates="tasks")
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    feedback_type = Column(String, nullable=False)  # "general", "bug", "feature", "improvement"
+    message = Column(Text, nullable=False)
+    status = Column(String, default="pending")  # "pending", "reviewed", "resolved", "closed"
+    admin_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="feedback")
 
 class User(Base):
     __tablename__ = "users"
@@ -99,6 +129,7 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user")
     roadmaps = relationship("Roadmap", back_populates="user")
     projects = relationship("Project", back_populates="user")
+    feedback = relationship("Feedback", back_populates="user")
 
 # Dependency to get database session
 def get_db():
