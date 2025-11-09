@@ -37,7 +37,8 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 email=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
-                is_active=user.is_active
+                is_active=user.is_active,
+                is_superuser=user.is_superuser
             )
         )
         
@@ -73,6 +74,7 @@ async def get_current_user(
             first_name=user.first_name,
             last_name=user.last_name,
             is_active=user.is_active,
+            is_superuser=user.is_superuser,  
             created_at=user.created_at
         )
         

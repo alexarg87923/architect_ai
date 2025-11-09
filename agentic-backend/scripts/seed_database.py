@@ -54,13 +54,15 @@ def create_dummy_users(db: Session):
             "email": "johndoe@example.com",
             "first_name": "John",
             "last_name": "Doe",
-            "password": "dev123"
+            "password": "dev123",
+            "is_superuser": True  
         },
         {
             "email": "beckysmith@example.com",
             "first_name": "Becky",
             "last_name": "Smith",
-            "password": "dev123"
+            "password": "dev123",
+            "is_superuser": False  
         }
     ]
     
@@ -79,7 +81,7 @@ def create_dummy_users(db: Session):
             is_active=True
         )
         
-        user = user_service.create_user(db, dummy_user)
+        user = user_service.create_user(db, dummy_user, is_superuser=user_data["is_superuser"])
         logger.info(f"✅ Created dummy user: {user.email} (ID: {user.id})")
         created_users.append(user)
     

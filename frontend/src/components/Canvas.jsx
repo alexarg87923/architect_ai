@@ -227,6 +227,12 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
 
   // Reactive viewport that updates when sidebar state changes
   const [viewport, setViewport] = useState({ x: 400, y: 0, zoom: 0.7 });
+  const centerViewport = useCallback(() => {
+    const defaultViewport = isCollapsed
+      ? { x: 550, y: 0, zoom: 0.7 }
+      : { x: 400, y: 0, zoom: 0.7 };
+    setViewport(defaultViewport);
+  }, [isCollapsed]);
 
   // Update viewport when sidebar state changes
   useEffect(() => {
@@ -273,6 +279,24 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
           maskColor="rgba(0, 0, 0, 0.1)"
         /> */}
       </ReactFlow>
+      <button
+        onClick={centerViewport}
+        className="absolute top-5 right-6 z-10 bg-white dark:bg-[#2a2a2a] hover:bg-gray-50 dark:hover:bg-[#252525] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-3 shadow-lg transition-all duration-200 hover:shadow-xl group"
+      >
+        <svg
+          className="w-4 h-4 text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+          />
+        </svg>
+      </button>
 
       <ProjectOverviewModal
         isOpen={isOverviewModalOpen}

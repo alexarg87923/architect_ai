@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, requireSuperuser = false }) => {
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -22,7 +22,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Render protected content if authenticated
+  // Redirect to dashboard if superuser is required but user is not a superuser
+  if (requireSuperuser && !user?.is_superuser) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Render protected content if authenticated (and superuser if required)
   return children;
 };
 

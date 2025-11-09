@@ -18,6 +18,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     """Complete user model with ID and timestamps"""
     id: int
+    is_superuser: bool = False
     created_at: datetime
     updated_at: datetime
     
@@ -31,6 +32,7 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     is_active: bool
+    is_superuser: bool = False  
 
 class LoginRequest(BaseModel):
     """Login request model"""

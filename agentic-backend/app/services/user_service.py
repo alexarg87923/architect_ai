@@ -8,7 +8,7 @@ import hashlib
 class UserService:
     """Service for handling user operations"""
     
-    def create_user(self, db: Session, user_create: UserCreate) -> User:
+    def create_user(self, db: Session, user_create: UserCreate, is_superuser: bool = False) -> User:
         """Create a new user"""
         # Simple hash for development (use bcrypt in production)
         password_hash = hashlib.sha256(user_create.password.encode()).hexdigest() if user_create.password else None
@@ -18,7 +18,8 @@ class UserService:
             first_name=user_create.first_name,
             last_name=user_create.last_name,
             password_hash=password_hash,
-            is_active=user_create.is_active
+            is_active=user_create.is_active,
+            is_superuser=is_superuser  
         )
         
         db.add(db_user)
@@ -31,6 +32,7 @@ class UserService:
             first_name=db_user.first_name,
             last_name=db_user.last_name,
             is_active=db_user.is_active,
+            is_superuser=db_user.is_superuser,  
             created_at=db_user.created_at,
             updated_at=db_user.updated_at
         )
@@ -47,6 +49,7 @@ class UserService:
             first_name=db_user.first_name,
             last_name=db_user.last_name,
             is_active=db_user.is_active,
+            is_superuser=db_user.is_superuser,  # ADDED: Include is_superuser
             created_at=db_user.created_at,
             updated_at=db_user.updated_at
         )
@@ -63,6 +66,7 @@ class UserService:
             first_name=db_user.first_name,
             last_name=db_user.last_name,
             is_active=db_user.is_active,
+            is_superuser=db_user.is_superuser,
             created_at=db_user.created_at,
             updated_at=db_user.updated_at
         )

@@ -67,9 +67,10 @@ function App() {
                 <Dashboard isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
               </ProtectedRoute>
             } />
-            {/* TODO: protect admin page so that only superusers can access */}
+            
+            {/* Superuser Protected Routes */}
             <Route path="/admin" element={
-              <ProtectedRoute>
+              <ProtectedRoute requireSuperuser={true}>
                 <Admin />
               </ProtectedRoute>
             } />
