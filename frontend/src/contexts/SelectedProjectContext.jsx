@@ -34,7 +34,9 @@ export const ProjectProvider = ({ children }) => {
   };
 
   const clearSelection = () => {
+    console.log('Clearing selected project...')
     setSelectedProject(null);
+    localStorage.removeItem(SELECTED_PROJECT_KEY);
   };
 
   const updateSelectedProject = (updatedProject) => {

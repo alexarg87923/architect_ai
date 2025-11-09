@@ -1,26 +1,70 @@
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   addEdge,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { RoadmapNode } from './nodes/RoadmapNode';
 import { StartNode } from './nodes/StartNode';
 import { SubtaskNode } from './nodes/SubtaskNode';
 import { ProjectOverviewModal } from './modals/ProjectOverviewModal';
-// icon imports
-import { MdFilterCenterFocus } from "react-icons/md";
 
-const nodeTypes = { roadmap: RoadmapNode, start: StartNode, subtask: SubtaskNode };
+// Component to handle fitView based on container dimensions
+const FitViewOnChange = ({ containerRef, nodesToFitView }) => {
+  const { fitView } = useReactFlow();
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  
+  const handleFitView = useCallback(() => {
+    fitView({
+      minZoom: 0.6,
+      maxZoom: 0.6,
+      nodes: nodesToFitView,
+      duration: 100,
+    });
+  }, [fitView, nodesToFitView]);
+  
+  // Observe container dimension changes
+  useEffect(() => {
+    if (!containerRef?.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerDimensions({ width, height });
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [containerRef]);
+  
+  // Call fitView when container dimensions change
+  useEffect(() => {
+    if (containerDimensions.width > 0 && containerDimensions.height > 0) {
+      const timeoutId = setTimeout(handleFitView, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [handleFitView, containerDimensions]);
+  
+  return null; // This component doesn't render anything
+};
+
 
 
 export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChange: onRoadmapNodesChange, isDark, isCollapsed, isTaskCollapsed }) => {
-  
+  const nodeTypes = { roadmap: RoadmapNode, start: StartNode, subtask: SubtaskNode };
+
+  // Container reference for responsive centering
+  const containerRef = useRef(null);
+
   // Modal state for project overview
   const [isOverviewModalOpen, setIsOverviewModalOpen] = useState(false);
   const [selectedNodeForOverview, setSelectedNodeForOverview] = useState(null);
@@ -36,7 +80,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
     setIsOverviewModalOpen(false);
     setSelectedNodeForOverview(null);
   }, []);
-  
+
   // Handle subtask completion toggle
   const handleSubtaskToggle = useCallback((parentNodeId, subtaskId, completed) => {
     // Update the roadmap nodes with the new subtask completion status
@@ -169,7 +213,10 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
           source: 'start-node',
           target: roadmapNodes[0].id || 'roadmap-0',
           type: 'smoothstep',
-          animated: true,
+          style: { 
+            strokeWidth: 1.5,
+          },
+          animated: false,
         });
       }
       
@@ -188,6 +235,9 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
             target: nextId,
             targetHandle: 'top',
             type: 'smoothstep',
+            style: { 
+              strokeWidth: 1.5,
+            },
             animated: false,
           });
         }
@@ -210,9 +260,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
               targetHandle: targetHandle,
               type: 'smoothstep',
               style: { 
-                stroke: '#94a3b8', 
                 strokeWidth: 1.5,
-                strokeOpacity: 0.6
               },
               animated: false,
             });
@@ -226,29 +274,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  // Reactive viewport that updates when sidebar state changes
-  const [viewport, setViewport] = useState({ x: 400, y: 0, zoom: 0.7 });
-  const centerViewport = useCallback(() => {
-    let defaultViewport = isCollapsed
-      ? { x: 600, y: 0, zoom: 0.7 }
-      : { x: 400, y: 0, zoom: 0.7 };
-    if (!isTaskCollapsed && !isCollapsed) {
-      defaultViewport = { x: 300, y: 0, zoom: 0.7 };
-    }
-    setViewport(defaultViewport);
-  }, [isCollapsed, isTaskCollapsed]);
-
-  // Update viewport when sidebar or task sidebar state changes
-  useEffect(() => {
-    let defaultViewport = isCollapsed
-      ? { x: 600, y: 0, zoom: 0.7 }
-      : { x: 400, y: 0, zoom: 0.7 };
-    if (!isTaskCollapsed && !isCollapsed) {
-      defaultViewport = { x: 300, y: 0, zoom: 0.7 };
-    }
-    setViewport(defaultViewport);
-  }, [isCollapsed, isTaskCollapsed]);
+  const nodesToFitView = nodes.filter(node => node.id === '1'); // This will center the viewport on the node below the startNode
 
   // Update nodes and edges when initialNodes or initialEdges change
   useEffect(() => {
@@ -265,7 +291,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
   );
 
   return (
-    <div className="flex-1 h-full">
+    <div ref={containerRef} className="flex-1 h-full">
       <ReactFlow
         panOnScroll
         nodes={nodes}
@@ -275,27 +301,20 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         colorMode={isDark ? 'dark' : 'light'}
+        nodesDraggable={false}
+        nodesConnectable={false}
         fitViewOptions={{
           padding: 0.2,
           maxZoom: 1.2,
           minZoom: 0.1
         }}
-        viewport={viewport}
-        onViewportChange={setViewport} // Allow manual viewport changes
+        // viewport={viewport}
+        // onViewportChange={setViewport} // Allow manual viewport changes
       >
         <Background />
-        {/* <Controls className="bg-gray-50 border border-gray-200 rounded-lg" /> */}
-        {/* <MiniMap 
-          className="bg-white border border-gray-200 rounded-lg shadow-sm"
-          maskColor="rgba(0, 0, 0, 0.1)"
-        /> */}
+        <FitViewOnChange containerRef={containerRef} nodesToFitView={nodesToFitView} />
+        <Controls showZoom={false} showInteractive={false} position="top-right" fitViewOptions={{ minZoom: 0.6, maxZoom: 0.6, nodes: nodesToFitView, duration: 100 }} className="border border-gray-200 dark:border-[#3C3C3C]" />
       </ReactFlow>
-      <button
-        onClick={centerViewport}
-        className="absolute top-5 right-5 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-2 shadow-sm transition-all duration-200 group text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 cursor-pointer"
-      >
-        <MdFilterCenterFocus className="w-6 h-6" />
-      </button>
 
       <ProjectOverviewModal
         isOpen={isOverviewModalOpen}

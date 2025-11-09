@@ -93,6 +93,7 @@ const Sidebar = ({ isDark, toggleTheme, isCollapsed, setIsCollapsed }) => {
   const handleLogout = async () => {
     try {
       await logout();
+      clearSelection();
     } catch (error) {
       console.error('Logout error:', error);
     }
