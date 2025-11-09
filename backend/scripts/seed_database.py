@@ -23,7 +23,9 @@ from app.core.database import engine, get_db
 from app.models.database import Base
 from app.services.user_service import UserService
 from app.services.project_service import ProjectService
-from app.models.api_schemas import UserCreate, ProjectCreate
+from app.services.task_service import TaskService
+from app.models.api_schemas import UserCreate, ProjectCreate, TaskCreate
+from app.models.database import Task as TaskDB
 import logging
 
 # Configure logging
@@ -49,7 +51,6 @@ def create_dummy_users(db: Session):
     user_service = UserService()
     created_users = []
     
-    # Define dummy users
     dummy_users = [
         {
             "email": "johndoe@example.com",
@@ -68,12 +69,10 @@ def create_dummy_users(db: Session):
     ]
     
     for user_data in dummy_users:
-        # Check if user already exists
         if user_service.user_exists(db, user_data["email"]):
             logger.info(f"✅ {user_data['first_name']} {user_data['last_name']} user already exists")
             continue
-        
-        # Create user
+
         dummy_user = UserCreate(
             email=user_data["email"],
             first_name=user_data["first_name"],
@@ -81,316 +80,430 @@ def create_dummy_users(db: Session):
             password=user_data["password"],  # Simple password for development
             is_active=True
         )
-        
+
         user = user_service.create_user(db, dummy_user, is_superuser=user_data["is_superuser"])
         logger.info(f"✅ Created dummy user: {user.email} (ID: {user.id})")
         created_users.append(user)
-    
+
     return created_users
 
 def create_sample_projects(db: Session, users):
     """Create sample projects for each user"""
     logger.info("📁 Creating sample projects...")
-    
+
     project_service = ProjectService()
-    
-    # Pre-generated roadmap data for CodeMentor project (to save API credits)
-    codementor_roadmap = {
-        "project_specification": {
-            "title": "CodeMentor",
-            "description": "An AI-powered platform for interactive coding assistance, providing real-time feedback and guidance for learners.",
-            "goals": [
-                "Build the project",
-                "Deploy successfully"
-            ],
-            "timeline_weeks": 4,
-            "tech_stack": [],
-            "user_experience_level": "beginner",
-            "deployment_needed": True,
-            "auth_needed": False,
-            "commercialization_goal": False,
-            "target_audience": "General users",
-            "similar_projects_built": False
-        },
-        "nodes": [
+    task_service = TaskService()
+
+    sample_project_data = {
+        "id": 1,
+        "name": "new project",
+        "description": "",
+        "status": "draft",
+        "createdAt": "2025-11-09T11:04:54.610Z",
+        "updatedAt": "2025-11-09T11:04:54.610Z",
+        "roadmapNodes": [
             {
-                "id": "1",
-                "title": "Project Setup & Environment",
-                "description": "Establish a rapid development environment with a frontend and backend setup, essential libraries, and deploy-ready configurations.",
-                "subtasks": [
+                "id": 1,
+                "name": "Project Setup & Environment",
+                "priority": "P0",
+                "description": "Establish the foundational development environment and project structure.",
+                "stories": [
                     {
-                        "id": "1.1",
-                        "title": "Initialize Git repository",
-                        "description": "Set up Git with initial commit",
-                        "completed": False,
-                        "estimated_hours": 2.0
+                        "id": 101,
+                        "title": "Initialize project repository and dev tools",
+                        "acceptance_criteria": [
+                            "A new Git repository is created and initialized.",
+                            "Basic `.gitignore` and `README.md` files are set up.",
+                            "Essential development tools (e.g., code editor, npm/yarn) are ready."
+                        ]
                     },
                     {
-                        "id": "1.2",
-                        "title": "Set up frontend with React",
-                        "description": "Create a new React app quickly",
-                        "completed": False,
-                        "estimated_hours": 2.0
+                        "id": 102,
+                        "title": "Configure React frontend development environment",
+                        "acceptance_criteria": [
+                            "A React project is initialized using Create React App or Vite.",
+                            "Frontend dependencies are installed.",
+                            "A basic 'Hello World' React component is displayed in the browser."
+                        ]
                     },
                     {
-                        "id": "1.3",
-                        "title": "Set up backend with FastAPI",
-                        "description": "Create FastAPI app with basic route",
-                        "completed": False,
-                        "estimated_hours": 2.0
-                    },
-                    {
-                        "id": "1.4",
-                        "title": "Create .env template file",
-                        "description": "Add essential environment variables",
-                        "completed": False,
-                        "estimated_hours": 1.0
+                        "id": 103,
+                        "title": "Set up Node.js/Express backend with PostgreSQL connection",
+                        "acceptance_criteria": [
+                            "A Node.js project is initialized with Express.",
+                            "PostgreSQL database is installed and running locally.",
+                            "A database connection is successfully established from the Node.js backend.",
+                            "Basic API endpoint returns a success message."
+                        ]
                     }
-                ],
-                "estimated_days": 1,
-                "estimated_hours": 7.0,
-                "tags": ["setup"],
-                "dependencies": [],
-                "status": "pending",
-                "completion_percentage": 0,
-                "deliverables": [
-                    "Project structure",
-                    "Development environment ready"
-                ],
-                "success_criteria": [
-                    "All core libraries integrated",
-                    "Basic project structure established"
-                ],
-                "overview": [
-                    "Establish a local development environment using tools like Node.js and React to enable rapid prototyping and iteration.",
-                    "Set up a version control system using Git, allowing for collaborative development and tracking of changes throughout the project.",
-                    "Create a structured project directory that separates frontend and backend code, ensuring maintainability and scalability as the project grows.",
-                    "Integrate essential libraries such as Axios for HTTP requests, React Router for navigation, and Redux for state management to streamline development.",
-                    "Configure a backend server using Express.js, connecting to a database like MongoDB, to allow for user data storage and management, which lays the foundation for future features.",
-                    "Implement a basic API structure to handle requests and responses, providing a clear pathway for frontend-backend communication.",
-                    "Set up environment variables and configurations for seamless deployment processes, making it easier to switch between development and production environments.",
-                    "Create initial frontend pages and components, such as a landing page and user dashboard, to visualize the user journey from the very beginning.",
-                    "Establish a continuous integration/continuous deployment (CI/CD) pipeline to automate testing and deployment, ensuring that code changes are quickly and reliably pushed to production."
                 ]
             },
             {
-                "id": "2",
-                "title": "User Authentication Setup",
-                "description": "Implement Firebase for user authentication to allow users to create accounts and log in securely.",
-                "subtasks": [
+                "id": 2,
+                "name": "Core Frontend Development",
+                "priority": "P1",
+                "description": "Develop the fundamental user interface components and navigation for the portfolio.",
+                "stories": [
                     {
-                        "id": "1",
-                        "title": "Initialize React with Firebase",
-                        "description": "Set up a React app with Firebase config",
-                        "completed": False,
-                        "estimated_hours": 2.0
+                        "id": 201,
+                        "title": "Design and implement responsive UI layout (header, navigation, footer)",
+                        "acceptance_criteria": [
+                            "Header with portfolio title/logo is present.",
+                            "Navigation links (e.g., About, Projects, Skills) are functional.",
+                            "Footer with copyright and basic links is implemented.",
+                            "Layout adjusts correctly for mobile, tablet, and desktop screen sizes."
+                        ]
                     },
                     {
-                        "id": "2",
-                        "title": "Implement Sign Up functionality",
-                        "description": "Add user registration using Firebase Auth",
-                        "completed": False,
-                        "estimated_hours": 3.0
+                        "id": 202,
+                        "title": "Develop clean, reusable React components",
+                        "acceptance_criteria": [
+                            "At least 3 core UI components (e.g., Button, Card, Section) are created.",
+                            "Components follow clear naming conventions and styling guidelines.",
+                            "Components are documented with prop types and basic usage examples."
+                        ]
                     },
                     {
-                        "id": "3",
-                        "title": "Create Login page",
-                        "description": "Develop a login page to authenticate users",
-                        "completed": False,
-                        "estimated_hours": 3.0
-                    },
-                    {
-                        "id": "4",
-                        "title": "Set up Git repository",
-                        "description": "Initialize Git and add basic .env template",
-                        "completed": False,
-                        "estimated_hours": 2.0
+                        "id": 203,
+                        "title": "Integrate routing for different portfolio sections",
+                        "acceptance_criteria": [
+                            "React Router is configured to manage client-side navigation.",
+                            "Clicking navigation links loads the correct section component without page refresh.",
+                            "URL paths accurately reflect the current section (e.g., /about, /projects)."
+                        ]
                     }
-                ],
-                "estimated_days": 3,
-                "estimated_hours": 10.0,
-                "tags": ["auth"],
-                "dependencies": [],
-                "status": "pending",
-                "completion_percentage": 0,
-                "deliverables": [
-                    "User registration and login functionality"
-                ],
-                "success_criteria": [
-                    "Users can register and log in",
-                    "User sessions are managed securely"
-                ],
-                "overview": None
+                ]
             },
             {
-                "id": "3",
-                "title": "Integrate Interactive Code Editor",
-                "description": "Set up Monaco Editor in the React frontend to provide a robust coding interface with syntax highlighting.",
-                "subtasks": [
+                "id": 3,
+                "name": "Backend & Database Infrastructure",
+                "priority": "P2",
+                "description": "Establish the server-side logic and database structure for managing portfolio content.",
+                "stories": [
                     {
-                        "id": "1",
-                        "title": "Set up Monaco Editor in React",
-                        "description": "Integrate Monaco Editor for syntax highlighting",
-                        "completed": False,
-                        "estimated_hours": 4.0
+                        "id": 301,
+                        "title": "Design PostgreSQL database schema for projects, skills, and personal info",
+                        "acceptance_criteria": [
+                            "Database schema includes tables for 'projects', 'skills', and 'about_me' information.",
+                            "Tables have appropriate columns and data types (e.g., project_name TEXT, skill_level INT).",
+                            "Relationships between tables are defined (if applicable, e.g., for project tags)."
+                        ]
                     },
                     {
-                        "id": "2",
-                        "title": "Implement basic editor features",
-                        "description": "Add code completion and error checking",
-                        "completed": False,
-                        "estimated_hours": 5.0
+                        "id": 302,
+                        "title": "Implement RESTful API endpoints using Node.js/Express for data retrieval",
+                        "acceptance_criteria": [
+                            "API endpoints are created for /api/about, /api/projects, and /api/skills.",
+                            "Each endpoint successfully queries the PostgreSQL database.",
+                            "Endpoints return data in a consistent JSON format."
+                        ]
                     },
                     {
-                        "id": "3",
-                        "title": "Deploy editor to staging environment",
-                        "description": "Test editor functionality in the staging area",
-                        "completed": False,
-                        "estimated_hours": 3.0
-                    },
-                    {
-                        "id": "4",
-                        "title": "Gather user feedback on editor",
-                        "description": "Collect feedback for future enhancements",
-                        "completed": False,
-                        "estimated_hours": 3.0
+                        "id": 303,
+                        "title": "Set up database migrations and seeding for initial data",
+                        "acceptance_criteria": [
+                            "A migration tool (e.g., Knex, TypeORM migrations) is configured.",
+                            "Initial migrations create the defined database schema.",
+                            "Seeder files populate the database with sample portfolio data (about, projects, skills)."
+                        ]
                     }
-                ],
-                "estimated_days": 5,
-                "estimated_hours": 15.0,
-                "tags": ["frontend"],
-                "dependencies": [],
-                "status": "pending",
-                "completion_percentage": 0,
-                "deliverables": [
-                    "Functional code editor integrated into the application"
-                ],
-                "success_criteria": [
-                    "Code editor supports syntax highlighting",
-                    "Basic editing features are functional"
-                ],
-                "overview": None
+                ]
             },
             {
-                "id": "4",
-                "title": "Implement AI-Powered Code Analysis",
-                "description": "Utilize OpenAI API to provide real-time feedback and error analysis on user code submissions.",
-                "subtasks": [
+                "id": 4,
+                "name": "Portfolio Content & Display",
+                "priority": "P3",
+                "description": "Develop the specific sections to display personal information, projects, and skills.",
+                "stories": [
                     {
-                        "id": "1",
-                        "title": "Set up OpenAI API integration",
-                        "description": "Integrate OpenAI API for code analysis",
-                        "completed": False,
-                        "estimated_hours": 4.0
+                        "id": 401,
+                        "title": "Create 'About Me' section to introduce self",
+                        "acceptance_criteria": [
+                            "The 'About Me' section displays personal information fetched from the backend.",
+                            "Includes a professional photo and a concise biography.",
+                            "Styling is consistent with the overall UI design."
+                        ]
                     },
                     {
-                        "id": "2",
-                        "title": "Add real-time feedback feature",
-                        "description": "Implement instant feedback on code submissions",
-                        "completed": False,
-                        "estimated_hours": 6.0
+                        "id": 402,
+                        "title": "Develop 'Projects' section to showcase detailed work",
+                        "acceptance_criteria": [
+                            "The 'Projects' section fetches and displays a list of projects from the backend.",
+                            "Each project displays a title, description, technologies used, and a link to the live demo/repo.",
+                            "Projects are presented in an appealing, scannable format (e.g., cards or grid)."
+                        ]
                     },
                     {
-                        "id": "3",
-                        "title": "Deploy initial prototype",
-                        "description": "Deploy working model for user testing",
-                        "completed": False,
-                        "estimated_hours": 4.0
-                    },
-                    {
-                        "id": "4",
-                        "title": "Collect user feedback for iteration",
-                        "description": "Gather insights for feature enhancements",
-                        "completed": False,
-                        "estimated_hours": 2.0
+                        "id": 403,
+                        "title": "Implement 'Skills' section to list technical proficiencies",
+                        "acceptance_criteria": [
+                            "The 'Skills' section fetches and displays technical skills from the backend.",
+                            "Skills are categorized (e.g., Frontend, Backend, Databases) or displayed visually (e.g., skill bars).",
+                            "The section is easy to read and highlights key proficiencies."
+                        ]
                     }
-                ],
-                "estimated_days": 7,
-                "estimated_hours": 16.0,
-                "tags": ["mvp"],
-                "dependencies": [],
-                "status": "pending",
-                "completion_percentage": 0,
-                "deliverables": [
-                    "Code analysis and feedback feature"
-                ],
-                "success_criteria": [
-                    "Users receive immediate feedback on code",
-                    "Error analysis is accurate and helpful"
-                ],
-                "overview": None
+                ]
             },
             {
-                "id": "5",
-                "title": "Develop Learning Modules",
-                "description": "Create simple learning modules for Python to showcase code explanations and exercises for users.",
-                "subtasks": [
+                "id": 5,
+                "name": "Deployment & Launch",
+                "priority": "P4",
+                "description": "Prepare and deploy the portfolio application to a production environment.",
+                "stories": [
                     {
-                        "id": "1",
-                        "title": "Set up module structure using template",
-                        "description": "Create a flexible learning module structure",
-                        "completed": False,
-                        "estimated_hours": 4.0
+                        "id": 501,
+                        "title": "Prepare application for production deployment",
+                        "acceptance_criteria": [
+                            "Frontend build process generates optimized production assets.",
+                            "Backend server is configured for production environment variables.",
+                            "All environment-specific configurations are managed securely."
+                        ]
                     },
                     {
-                        "id": "2",
-                        "title": "Implement core exercises with Python",
-                        "description": "Add basic coding exercises for users",
-                        "completed": False,
-                        "estimated_hours": 6.0
+                        "id": 502,
+                        "title": "Deploy frontend and backend to a hosting service",
+                        "acceptance_criteria": [
+                            "Frontend is deployed to a static site host (e.g., Netlify, Vercel).",
+                            "Backend API is deployed to a cloud platform (e.g., Heroku, AWS EC2, DigitalOcean).",
+                            "Both frontend and backend are accessible via public URLs."
+                        ]
                     },
                     {
-                        "id": "3",
-                        "title": "Deploy modules on learning platform",
-                        "description": "Upload and configure modules for testing",
-                        "completed": False,
-                        "estimated_hours": 4.0
-                    },
-                    {
-                        "id": "4",
-                        "title": "Gather feedback and iterate quickly",
-                        "description": "Collect user feedback to enhance modules",
-                        "completed": False,
-                        "estimated_hours": 6.0
+                        "id": 503,
+                        "title": "Configure domain and SSL certificate",
+                        "acceptance_criteria": [
+                            "A custom domain (if desired) is pointed to the deployed application.",
+                            "SSL/TLS certificate is configured for secure HTTPS access.",
+                            "The portfolio is fully accessible and loads securely via the custom domain."
+                        ]
                     }
-                ],
-                "estimated_days": 7,
-                "estimated_hours": 20.0,
-                "tags": ["mvp"],
-                "dependencies": [],
-                "status": "pending",
-                "completion_percentage": 0,
-                "deliverables": [
-                    "Basic learning module for Python"
-                ],
-                "success_criteria": [
-                    "Users can access learning modules",
-                    "Modules provide interactive exercises and explanations"
-                ],
-                "overview": None
+                ]
             }
         ],
-        "total_estimated_weeks": 4,
-        "total_estimated_hours": 68.0
+        "tasks": {
+            "daily-todos": [
+                {
+                    "id": 1,
+                    "text": "Setup project roadmap",
+                    "completed": False,
+                    "archive": False
+                }
+            ],
+            "your-ideas": [
+                {
+                    "id": 2,
+                    "text": "Cool new idea",
+                    "completed": False,
+                    "archive": False
+                }
+            ]
+        },
+        "roadmap_data": {
+            "project": {
+                "name": "Developer Portfolio Web App",
+                "vision": "To build a web application portfolio effectively showcasing development skills to recruiters, with the ultimate goal of securing a job.",
+                "type": "Web Application",
+                "target_users": "recruiters"
+            },
+            "epics": [
+                {
+                    "id": 1,
+                    "name": "Project Setup & Environment",
+                    "priority": "P0",
+                    "description": "Establish the foundational development environment and project structure.",
+                    "stories": [
+                        {
+                            "id": 101,
+                            "title": "Initialize project repository and dev tools",
+                            "acceptance_criteria": [
+                                "A new Git repository is created and initialized.",
+                                "Basic `.gitignore` and `README.md` files are set up.",
+                                "Essential development tools (e.g., code editor, npm/yarn) are ready."
+                            ]
+                        },
+                        {
+                            "id": 102,
+                            "title": "Configure React frontend development environment",
+                            "acceptance_criteria": [
+                                "A React project is initialized using Create React App or Vite.",
+                                "Frontend dependencies are installed.",
+                                "A basic 'Hello World' React component is displayed in the browser."
+                            ]
+                        },
+                        {
+                            "id": 103,
+                            "title": "Set up Node.js/Express backend with PostgreSQL connection",
+                            "acceptance_criteria": [
+                                "A Node.js project is initialized with Express.",
+                                "PostgreSQL database is installed and running locally.",
+                                "A database connection is successfully established from the Node.js backend.",
+                                "Basic API endpoint returns a success message."
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "name": "Core Frontend Development",
+                    "priority": "P1",
+                    "description": "Develop the fundamental user interface components and navigation for the portfolio.",
+                    "stories": [
+                        {
+                            "id": 201,
+                            "title": "Design and implement responsive UI layout (header, navigation, footer)",
+                            "acceptance_criteria": [
+                                "Header with portfolio title/logo is present.",
+                                "Navigation links (e.g., About, Projects, Skills) are functional.",
+                                "Footer with copyright and basic links is implemented.",
+                                "Layout adjusts correctly for mobile, tablet, and desktop screen sizes."
+                            ]
+                        },
+                        {
+                            "id": 202,
+                            "title": "Develop clean, reusable React components",
+                            "acceptance_criteria": [
+                                "At least 3 core UI components (e.g., Button, Card, Section) are created.",
+                                "Components follow clear naming conventions and styling guidelines.",
+                                "Components are documented with prop types and basic usage examples."
+                            ]
+                        },
+                        {
+                            "id": 203,
+                            "title": "Integrate routing for different portfolio sections",
+                            "acceptance_criteria": [
+                                "React Router is configured to manage client-side navigation.",
+                                "Clicking navigation links loads the correct section component without page refresh.",
+                                "URL paths accurately reflect the current section (e.g., /about, /projects)."
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "name": "Backend & Database Infrastructure",
+                    "priority": "P2",
+                    "description": "Establish the server-side logic and database structure for managing portfolio content.",
+                    "stories": [
+                        {
+                            "id": 301,
+                            "title": "Design PostgreSQL database schema for projects, skills, and personal info",
+                            "acceptance_criteria": [
+                                "Database schema includes tables for 'projects', 'skills', and 'about_me' information.",
+                                "Tables have appropriate columns and data types (e.g., project_name TEXT, skill_level INT).",
+                                "Relationships between tables are defined (if applicable, e.g., for project tags)."
+                            ]
+                        },
+                        {
+                            "id": 302,
+                            "title": "Implement RESTful API endpoints using Node.js/Express for data retrieval",
+                            "acceptance_criteria": [
+                                "API endpoints are created for /api/about, /api/projects, and /api/skills.",
+                                "Each endpoint successfully queries the PostgreSQL database.",
+                                "Endpoints return data in a consistent JSON format."
+                            ]
+                        },
+                        {
+                            "id": 303,
+                            "title": "Set up database migrations and seeding for initial data",
+                            "acceptance_criteria": [
+                                "A migration tool (e.g., Knex, TypeORM migrations) is configured.",
+                                "Initial migrations create the defined database schema.",
+                                "Seeder files populate the database with sample portfolio data (about, projects, skills)."
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "name": "Portfolio Content & Display",
+                    "priority": "P3",
+                    "description": "Develop the specific sections to display personal information, projects, and skills.",
+                    "stories": [
+                        {
+                            "id": 401,
+                            "title": "Create 'About Me' section to introduce self",
+                            "acceptance_criteria": [
+                                "The 'About Me' section displays personal information fetched from the backend.",
+                                "Includes a professional photo and a concise biography.",
+                                "Styling is consistent with the overall UI design."
+                            ]
+                        },
+                        {
+                            "id": 402,
+                            "title": "Develop 'Projects' section to showcase detailed work",
+                            "acceptance_criteria": [
+                                "The 'Projects' section fetches and displays a list of projects from the backend.",
+                                "Each project displays a title, description, technologies used, and a link to the live demo/repo.",
+                                "Projects are presented in an appealing, scannable format (e.g., cards or grid)."
+                            ]
+                        },
+                        {
+                            "id": 403,
+                            "title": "Implement 'Skills' section to list technical proficiencies",
+                            "acceptance_criteria": [
+                                "The 'Skills' section fetches and displays technical skills from the backend.",
+                                "Skills are categorized (e.g., Frontend, Backend, Databases) or displayed visually (e.g., skill bars).",
+                                "The section is easy to read and highlights key proficiencies."
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "name": "Deployment & Launch",
+                    "priority": "P4",
+                    "description": "Prepare and deploy the portfolio application to a production environment.",
+                    "stories": [
+                        {
+                            "id": 501,
+                            "title": "Prepare application for production deployment",
+                            "acceptance_criteria": [
+                                "Frontend build process generates optimized production assets.",
+                                "Backend server is configured for production environment variables.",
+                                "All environment-specific configurations are managed securely."
+                            ]
+                        },
+                        {
+                            "id": 502,
+                            "title": "Deploy frontend and backend to a hosting service",
+                            "acceptance_criteria": [
+                                "Frontend is deployed to a static site host (e.g., Netlify, Vercel).",
+                                "Backend API is deployed to a cloud platform (e.g., Heroku, AWS EC2, DigitalOcean).",
+                                "Both frontend and backend are accessible via public URLs."
+                            ]
+                        },
+                        {
+                            "id": 503,
+                            "title": "Configure domain and SSL certificate",
+                            "acceptance_criteria": [
+                                "A custom domain (if desired) is pointed to the deployed application.",
+                                "SSL/TLS certificate is configured for secure HTTPS access.",
+                                "The portfolio is fully accessible and loads securely via the custom domain."
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "architecture": {
+                "mermaid_diagram": "graph TD; A[Recruiter] --> B{Internet}; B --> C[React Frontend]; C -- API Requests --> D[Node.js/Express Backend]; D -- Data Access --> E[PostgreSQL Database];",
+                "components": [
+                    "React Frontend",
+                    "Node.js/Express Backend API",
+                    "PostgreSQL Database"
+                ]
+            },
+            "message": "✅ Roadmap generated and saved! You can now start with Project Setup & Environment."
+        }
     }
     
     # Sample projects for each user
     sample_projects = [
         {
             "user_email": "johndoe@example.com",
-            "name": "Sample Project 1",
-            "description": "A sample project for John Doe to test the roadmap functionality",
-            "roadmap_data": codementor_roadmap  # Include the pre-generated roadmap
-        },
-        {
-            "user_email": "johndoe@example.com",
-            "name": "Sample Project 2",
-            "description": "A second sample project for John Doe to test the roadmap functionality",
-        },
-        {
-            "user_email": "beckysmith@example.com", 
-            "name": "Sample Project 3",
-            "description": "A sample project for Becky Smith to test the roadmap functionality"
+            "name": sample_project_data["name"],
+            "description": sample_project_data["description"],
+            "roadmap_data": sample_project_data["roadmap_data"],  # Only save the roadmap_data part, not the entire object
+            "tasks": sample_project_data.get("tasks", {})  # Tasks will be created separately
         }
     ]
     
@@ -412,11 +525,28 @@ def create_sample_projects(db: Session, users):
         
         project = project_service.create_project(db, sample_project, user_id)
         
+        # Remove default tasks created by create_project
+        db.query(TaskDB).filter(TaskDB.project_id == project.id).delete()
+        db.commit()
+        
         # Add roadmap data if provided
         if "roadmap_data" in project_data:
             project.roadmap_data = project_data["roadmap_data"]
             db.commit()
-            logger.info(f"✅ Created sample project with roadmap: {project.name} for user {project_data['user_email']} (Project ID: {project.id})")
+        
+        # Create tasks from sample data if provided
+        if "tasks" in project_data and project_data["tasks"]:
+            tasks_data = project_data["tasks"]
+            for task_type in ["daily-todos", "your-ideas"]:
+                if task_type in tasks_data:
+                    for task_item in tasks_data[task_type]:
+                        task_create = TaskCreate(
+                            text=task_item["text"],
+                            completed=task_item.get("completed", False),
+                            task_type=task_type
+                        )
+                        task_service.create_task(db, task_create, project.id)
+            logger.info(f"✅ Created sample project with roadmap and tasks: {project.name} for user {project_data['user_email']} (Project ID: {project.id})")
         else:
             logger.info(f"✅ Created sample project: {project.name} for user {project_data['user_email']} (Project ID: {project.id})")
 
@@ -437,7 +567,7 @@ def main():
             users = create_dummy_users(db)
             
             # Create sample projects for each user
-            # create_sample_projects(db, users)
+            create_sample_projects(db, users)
             
             logger.info("=" * 50)
             logger.info("🎉 Database seeding completed successfully!")
