@@ -4,6 +4,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.models.agent import ConversationState, ChatMessage, Roadmap
 from app.services.agent_service import AgentService
+from app.services.database_service import DatabaseService
 import uuid
 from datetime import datetime
 
@@ -24,8 +25,9 @@ class ChatResponse(BaseModel):
     action_button: Optional[str] = None
     session_id: str
 
-# Initialize AgentService
+# Initialize AgentService and DatabaseService
 agent_service = AgentService()
+database_service = DatabaseService()
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_agent(
@@ -44,13 +46,17 @@ async def chat_with_agent(
         if request.conversation_state:
             conversation_state = request.conversation_state
         else:
-            # Create new conversation state
-            conversation_state = ConversationState(
-                session_id=session_id,
-                phase="discovery",
-                specifications_complete=False,
-                messages=[]
-            )
+            # Try to load from database first
+            conversation_state = database_service.load_conversation_state(db, session_id)
+            
+            if not conversation_state:
+                # Create new conversation state
+                conversation_state = ConversationState(
+                    session_id=session_id,
+                    phase="discovery",
+                    specifications_complete=False,
+                    messages=[]
+                )
         
         # Process message with agent service
         agent_response, updated_state, action_button = await agent_service.process_message(
@@ -59,8 +65,8 @@ async def chat_with_agent(
             action_type=request.action_type
         )
         
-        # TODO: Save conversation state to database
-        # await save_conversation_state(db, updated_state)
+        # Save conversation state to database
+        database_service.save_conversation_state(db, updated_state)
         
         return ChatResponse(
             agent_response=agent_response,
@@ -81,16 +87,11 @@ async def get_conversation(
     Retrieve conversation state by session ID
     """
     try:
-        # TODO: Load conversation state from database
-        # conversation_state = await load_conversation_state(db, session_id)
+        # Load conversation state from database
+        conversation_state = database_service.load_conversation_state(db, session_id)
         
-        # For now, return empty state
-        conversation_state = ConversationState(
-            session_id=session_id,
-            phase="discovery",
-            specifications_complete=False,
-            messages=[]
-        )
+        if not conversation_state:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         
         return conversation_state
         
@@ -106,11 +107,13 @@ async def get_roadmap(
     Get the current roadmap for a session
     """
     try:
-        # TODO: Load roadmap from database
-        # roadmap = await load_roadmap(db, session_id)
+        # Load roadmap from database
+        roadmap = database_service.load_roadmap(db, session_id)
         
-        # For now, return None
-        return {"roadmap": None, "message": "Roadmap retrieval not yet implemented"}
+        if roadmap:
+            return {"roadmap": roadmap.dict(), "message": "Roadmap retrieved successfully"}
+        else:
+            return {"roadmap": None, "message": "No roadmap found for this session"}
         
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Roadmap not found: {str(e)}")
@@ -124,10 +127,13 @@ async def delete_conversation(
     Delete a conversation and its associated data
     """
     try:
-        # TODO: Delete conversation from database
-        # await delete_conversation_data(db, session_id)
+        # Delete conversation from database
+        success = database_service.delete_conversation(db, session_id)
         
-        return {"message": f"Conversation {session_id} deleted successfully"}
+        if success:
+            return {"message": f"Conversation {session_id} deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting conversation: {str(e)}")

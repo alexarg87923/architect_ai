@@ -1,0 +1,781 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Users, 
+  Plus, 
+  Trash2, 
+  Activity, 
+  Database, 
+  Settings,
+  BarChart3,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Key
+} from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+const Admin = () => {
+  const [activeTab, setActiveTab] = useState('users');
+  const [users, setUsers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [analytics, setAnalytics] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  // Load initial data
+  useEffect(() => {
+    loadUsers();
+    loadProjects();
+    loadAnalytics();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users`);
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/projects`);
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/analytics`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    }
+  };
+
+  const tabs = [
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'projects', label: 'Projects', icon: Activity },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'system', label: 'System', icon: Settings }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#1a1a1a]">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage users, projects, and system settings
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="border-b border-gray-200 dark:border-[#3C3C3C]">
+            <nav className="-mb-px flex space-x-8">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'users' && <UserManagement 
+          users={users}
+          onRefresh={loadUsers}
+          showCreateUser={showCreateUser}
+          setShowCreateUser={setShowCreateUser}
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+        />}
+        
+        {activeTab === 'projects' && <ProjectManagement 
+          projects={projects}
+          onRefresh={loadProjects}
+        />}
+        
+        {activeTab === 'analytics' && <AnalyticsDashboard 
+          analytics={analytics}
+          onRefresh={loadAnalytics}
+        />}
+        
+        {activeTab === 'system' && <SystemManagement />}
+      </div>
+
+      {/* Create User Modal */}
+      {showCreateUser && (
+        <CreateUserModal 
+          onClose={() => setShowCreateUser(false)}
+          onSuccess={() => {
+            setShowCreateUser(false);
+            loadUsers();
+          }}
+        />
+      )}
+
+      {/* User Details Modal */}
+      {selectedUser && (
+        <UserDetailsModal 
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onSuccess={loadUsers}
+        />
+      )}
+    </div>
+  );
+};
+
+// User Management Component
+const UserManagement = ({ users, onRefresh, showCreateUser, setShowCreateUser, selectedUser, setSelectedUser }) => {
+  const handleDeleteUser = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        onRefresh();
+      } else {
+        alert('Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
+    }
+  };
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/toggle-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: !currentStatus }),
+      });
+      
+      if (response.ok) {
+        onRefresh();
+      } else {
+        alert('Failed to update user status');
+      }
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert('Failed to update user status');
+    }
+  };
+
+  return (
+    <div>
+      {/* Header with Add User button */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Users ({users.length})
+        </h2>
+        <button
+          onClick={() => setShowCreateUser(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add User
+        </button>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+          <thead className="bg-gray-50 dark:bg-[#3A3A3A]">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                User
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Projects
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Created
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#2a2a2a] divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+            {users.map((user) => (
+              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-[#3A3A3A]">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {user.first_name} {user.last_name}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {user.email}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.is_active 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  }`}>
+                    {user.is_active ? (
+                      <>
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Inactive
+                      </>
+                    )}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {user.project_count || 0}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(user.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedUser(user)}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => toggleUserStatus(user.id, user.is_active)}
+                      className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                      title={user.is_active ? "Deactivate" : "Activate"}
+                    >
+                      <Key className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      title="Delete User"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Create User Modal
+const CreateUserModal = ({ onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        onSuccess();
+      } else {
+        const error = await response.json();
+        alert(`Failed to create user: ${error.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Create New User
+        </h3>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-[#1a1a1a] dark:text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                First Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-[#1a1a1a] dark:text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-[#1a1a1a] dark:text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Initial Password
+              </label>
+              <input
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#3C3C3C] rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-[#1a1a1a] dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-[#3C3C3C] rounded-lg hover:bg-gray-50 dark:hover:bg-[#3A3A3A]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg"
+            >
+              {loading ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// User Details Modal
+const UserDetailsModal = ({ user, onClose, onSuccess }) => {
+  const [userProjects, setUserProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserProjects();
+  }, [user.id]);
+
+  const loadUserProjects = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${user.id}/projects`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserProjects(data);
+      }
+    } catch (error) {
+      console.error('Failed to load user projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            User Details
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          >
+            <XCircle className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* User Info */}
+        <div className="bg-gray-50 dark:bg-[#3A3A3A] rounded-lg p-4 mb-6">
+          <h4 className="font-medium text-gray-900 dark:text-white mb-2">User Information</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Name:</span>
+              <span className="ml-2 text-gray-900 dark:text-white">
+                {user.first_name} {user.last_name}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Email:</span>
+              <span className="ml-2 text-gray-900 dark:text-white">{user.email}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Status:</span>
+              <span className={`ml-2 ${user.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                {user.is_active ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Created:</span>
+              <span className="ml-2 text-gray-900 dark:text-white">
+                {new Date(user.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* User Projects */}
+        <div>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+            Projects ({userProjects.length})
+          </h4>
+          {loading ? (
+            <div className="text-center py-4">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto" />
+            </div>
+          ) : userProjects.length > 0 ? (
+            <div className="space-y-3">
+              {userProjects.map((project) => (
+                <div key={project.id} className="border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h5 className="font-medium text-gray-900 dark:text-white">{project.name}</h5>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {project.description}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      project.status === 'active' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                    }`}>
+                      {project.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Created: {new Date(project.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+              No projects found
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Project Management Component
+const ProjectManagement = ({ projects, onRefresh }) => {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          All Projects ({projects.length})
+        </h2>
+        <button
+          onClick={onRefresh}
+          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="bg-white dark:bg-[#2a2a2a] rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+          <thead className="bg-gray-50 dark:bg-[#3A3A3A]">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Project
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Owner
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Roadmap
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Created
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-[#2a2a2a] divide-y divide-gray-200 dark:divide-[#3C3C3C]">
+            {projects.map((project) => (
+              <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-[#3A3A3A]">
+                <td className="px-6 py-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {project.name}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {project.description?.substring(0, 100)}...
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {project.user_name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    project.status === 'active' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                  }`}>
+                    {project.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {project.has_roadmap ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-gray-400" />
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {new Date(project.created_at).toLocaleDateString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Analytics Dashboard Component
+const AnalyticsDashboard = ({ analytics, onRefresh }) => {
+  const stats = [
+    { label: 'Total Users', value: analytics.total_users || 0, icon: Users },
+    { label: 'Active Projects', value: analytics.active_projects || 0, icon: Activity },
+    { label: 'Roadmaps Generated', value: analytics.total_roadmaps || 0, icon: BarChart3 },
+    { label: 'Conversations', value: analytics.total_conversations || 0, icon: Activity },
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Analytics Overview
+        </h2>
+        <button
+          onClick={onRefresh}
+          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 shadow">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Icon className="w-8 h-8 text-blue-500" />
+                </div>
+                <div className="ml-4">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {stat.value}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {stat.label}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// System Management Component
+const SystemManagement = () => {
+  const [backupStatus, setBackupStatus] = useState('');
+  const [systemHealth, setSystemHealth] = useState({});
+
+  const handleBackupDatabase = async () => {
+    setBackupStatus('Creating backup...');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/backup`, {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        setBackupStatus('Backup created successfully');
+        setTimeout(() => setBackupStatus(''), 3000);
+      } else {
+        setBackupStatus('Backup failed');
+      }
+    } catch (error) {
+      setBackupStatus('Backup failed');
+    }
+  };
+
+  const checkSystemHealth = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/health`);
+      if (response.ok) {
+        const data = await response.json();
+        setSystemHealth(data);
+      }
+    } catch (error) {
+      console.error('Health check failed:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkSystemHealth();
+  }, []);
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+        System Management
+      </h2>
+
+      <div className="space-y-6">
+        {/* Database Tools */}
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 shadow">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            Database Tools
+          </h3>
+          <div className="space-y-3">
+            <button
+              onClick={handleBackupDatabase}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <Database className="w-4 h-4" />
+              Create Backup
+            </button>
+            {backupStatus && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">{backupStatus}</p>
+            )}
+          </div>
+        </div>
+
+        {/* System Health */}
+        <div className="bg-white dark:bg-[#2a2a2a] rounded-lg p-6 shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              System Health
+            </h3>
+            <button
+              onClick={checkSystemHealth}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700 dark:text-gray-300">API Status</span>
+              <span className="flex items-center dark:text-gray-500">
+                <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                Online
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700 dark:text-gray-300">Database</span>
+              <span className="flex items-center dark:text-gray-500">
+                <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                Connected
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Admin;

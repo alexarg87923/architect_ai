@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import agent, roadmap, chat
+from app.api.routes import agent, auth, projects, admin
 from app.core.config import settings
 from app.core.database import engine, Base
 import logging
@@ -37,9 +37,10 @@ async def startup_event():
     logger.info("Database tables verified successfully")
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
-app.include_router(roadmap.router, prefix="/api/roadmap", tags=["roadmap"])
-app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(projects.router, prefix="/api", tags=["projects"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 @app.get("/")
 async def root():

@@ -33,20 +33,20 @@ const ProjectMenuModal = ({ isOpen, x, y, project, onClose, onRename, onDelete }
       onClick={onClose}
     >
       <div
-        className="absolute bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[160px]"
+        className="absolute bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-2 min-w-[160px]"
         style={{ left: x, top: y }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={handleRename}
-          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] flex items-center gap-3"
         >
           <HiMiniPencilSquare className="w-4 h-4" />
           Rename
         </button>
         <button
           onClick={handleDelete}
-          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3"
         >
           <HiOutlineTrash className="w-4 h-4" />
           Move to Trash

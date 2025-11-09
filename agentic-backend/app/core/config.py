@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
     
     # Database
     DATABASE_URL: str = "sqlite:///./roadmap.db"
@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     ANTHROPIC_MODEL: str = "claude-3-haiku-20240307"
     
     # Groq API
-    GROQ_KEY: str = os.getenv("GROQ_KEY", "")
-    GROQ_MODEL: str = "llama3-70b-8192"
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"  # Supports tool use: https://console.groq.com/docs/tool-use
     
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"

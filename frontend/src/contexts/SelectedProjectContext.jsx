@@ -37,11 +37,21 @@ export const ProjectProvider = ({ children }) => {
     setSelectedProject(null);
   };
 
+  const updateRoadmapNodes = (updatedNodes) => {
+    if (selectedProject) {
+      setSelectedProject({
+        ...selectedProject,
+        roadmapNodes: updatedNodes
+      });
+    }
+  };
+
   return (
     <ProjectContext.Provider value={{
       selectedProject,
       selectProject,
-      clearSelection
+      clearSelection,
+      updateRoadmapNodes
     }}>
       {children}
     </ProjectContext.Provider>

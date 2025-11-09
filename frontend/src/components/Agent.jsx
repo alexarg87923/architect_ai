@@ -119,7 +119,7 @@ const Agent = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-md transition-all duration-300 flex items-center justify-center z-50 cursor-pointer"
+          className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all duration-300 flex items-center justify-center z-50 cursor-pointer"
         >
           <BiSolidFaceMask className="w-7 h-7" />
         </button>
@@ -127,11 +127,11 @@ const Agent = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-8 right-8 w-[450px] h-[450px] bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col z-50">
+        <div className="fixed bottom-8 right-8 w-[450px] h-[450px] bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-xl border border-gray-200 dark:border-[#3C3C3C] flex flex-col z-50">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 text-white rounded-t-2xl">
+          <div className="flex items-center justify-between p-4 bg-blue-600 dark:bg-blue-700 text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
                 
                 <BiSolidFaceMask className="w-5 h-5" />
               </div>
@@ -141,7 +141,7 @@ const Agent = () => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-full bg-gray-200 text-gray-600 cursor-pointer"
+              className="p-1 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 cursor-pointer"
             >
               <RxCross2 className="w-4 h-4" />
             </button>
@@ -159,7 +159,7 @@ const Agent = () => {
                   <div className={`rounded-lg px-3 py-2 ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : 'bg-gray-100 dark:bg-[#3A3A3A] text-gray-800 dark:text-gray-200'
                   }`}>
                     <p className="text-sm">{message.content}</p>
                   </div>
@@ -171,14 +171,14 @@ const Agent = () => {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex gap-2 max-w-[85%]">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <BiSolidFaceMask className="w-5 h-5 text-blue-500" />
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <BiSolidFaceMask className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                   </div>
-                  <div className="bg-gray-100 rounded-lg px-3 py-2">
+                  <div className="bg-gray-100 dark:bg-[#3A3A3A] rounded-lg px-3 py-2">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
                   </div>
                 </div>
@@ -190,14 +190,14 @@ const Agent = () => {
           {/* Input */}
           <div className="p-4">
             {/* Input Area with inline buttons */}
-            <div className="bg-gray-50 border border-gray-300 rounded-xl px-2 pb-2 pt-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+            <div className="bg-gray-50 dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#3C3C3C] rounded-xl px-2 pb-2 pt-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
               <textarea
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me anything..."
-                className="w-full resize-none bg-transparent text-sm focus:outline-none placeholder-gray-500 px-2"
+                className="w-full resize-none bg-transparent text-sm focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 px-2"
                 rows="1"
                 style={{ maxHeight: '100px', minHeight: '20px' }}
               />
@@ -207,17 +207,17 @@ const Agent = () => {
                 <div className="flex items-center gap-1 relative" ref={actionMenuRef}>
                   {/* Action Menu Dropdown */}
                   {showActionMenu && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px] z-10">
+                    <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-1 min-w-[180px] z-10">
                       {actionOptions.map((option) => (
                         <button
                           key={option.id}
                           onClick={() => handleActionSelect(option.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors ${
-                            selectedAction === option.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3A3A3A] transition-colors ${
+                            selectedAction === option.id ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                           }`}
                         >
                           <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-gray-500">{option.description}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>
                         </button>
                       ))}
                     </div>
@@ -225,7 +225,7 @@ const Agent = () => {
 
                   {/* Microphone Button */}
                   <button
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-200 cursor-pointer"
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer"
                     title="Voice input"
                   >
                     <FaMicrophone className="w-4.5 h-4.5" />
@@ -234,7 +234,7 @@ const Agent = () => {
                   {/* Action Selector Button */}
                   <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-200 cursor-pointer flex items-center gap-1"
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] cursor-pointer flex items-center gap-1"
                     title={`Current action: ${actionOptions.find(opt => opt.id === selectedAction)?.label}`}
                   >
                     <span className="text-xs font-medium">{selectedAction}</span>
@@ -246,7 +246,7 @@ const Agent = () => {
                 <button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isTyping}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-200 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-[#3A3A3A] disabled:cursor-not-allowed cursor-pointer"
                     >
                     <FaCircleArrowUp className="w-5 h-5" />
                 </button>

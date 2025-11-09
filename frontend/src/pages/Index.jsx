@@ -1,20 +1,50 @@
 import Sidebar from "../components/Sidebar";
 import Agent from "../components/Agent";
+import TaskSidebar from "../components/TaskSidebar";
 import { Canvas } from "../components/Canvas";
-import { useSelectedProject } from "../contexts/ProjectContext";
+import { useSelectedProject } from "../contexts/SelectedProjectContext";
+import { useState, useEffect } from "react";
 
-function Index() {
-    const { selectedProject } = useSelectedProject();
+function Index({ isDark, toggleTheme }) {
+    const { selectedProject, updateRoadmapNodes } = useSelectedProject();
+    
+    // Manage sidebar collapsed state
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        try {
+            const savedState = localStorage.getItem('ai-pm-sidebar-collapsed');
+            return savedState ? JSON.parse(savedState) : false;
+        } catch (error) {
+            console.error('Failed to load sidebar state:', error);
+            return false;
+        }
+    });
+
+    // Save sidebar state to localStorage whenever it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem('ai-pm-sidebar-collapsed', JSON.stringify(isCollapsed));
+        } catch (error) {
+            console.error('Failed to save sidebar state:', error);
+        }
+    }, [isCollapsed]);
+    
 
     return (
-        <div className='flex h-screen w-screen'>
-            <Sidebar />
+        <div className='flex h-screen w-screen bg-gray-50 dark:bg-[#1a1a1a]'>
+            <Sidebar isDark={isDark} toggleTheme={toggleTheme} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+            
+            {/* Task Sidebar Strip/Panel */}
+            <TaskSidebar selectedProject={selectedProject} isSidebarCollapsed={isCollapsed} />
+
             {/* Main content area */}
-            <div className="flex-1 bg-gray-50 p-6">
+            <div className="flex-1 bg-gray-50 dark:bg-[#1a1a1a]">
                 <Canvas 
                     hasProject={!!selectedProject} 
                     projectName={selectedProject?.name}
                     roadmapNodes={selectedProject?.roadmapNodes || []}
+                    onNodesChange={updateRoadmapNodes}
+                    isDark={isDark}
+                    isCollapsed={isCollapsed}
                 />
             </div>
             {/* Floating AI Agent Chatbot */}
