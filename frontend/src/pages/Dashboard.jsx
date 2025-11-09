@@ -27,6 +27,26 @@ function Dashboard({ isDark, toggleTheme }) {
             console.error('Failed to save sidebar state:', error);
         }
     }, [isCollapsed]);
+
+    // Manage task sidebar collapsed state
+    const [isTaskCollapsed, setIsTaskCollapsed] = useState(() => {
+        try {
+            const savedState = localStorage.getItem('task-sidebar-collapsed');
+            return savedState ? JSON.parse(savedState) : true;
+        } catch (error) {
+            console.error('Failed to load task sidebar state:', error);
+            return true;
+        }
+    });
+
+    // Save task sidebar state to localStorage whenever it changes
+    useEffect(() => {
+        try {
+            localStorage.setItem('task-sidebar-collapsed', JSON.stringify(isTaskCollapsed));
+        } catch (error) {
+            console.error('Failed to save task sidebar state:', error);
+        }
+    }, [isTaskCollapsed]);
     
 
     return (
@@ -34,7 +54,12 @@ function Dashboard({ isDark, toggleTheme }) {
             <Sidebar isDark={isDark} toggleTheme={toggleTheme} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
             
             {/* Task Sidebar Strip/Panel */}
-            <TaskSidebar selectedProject={selectedProject} isSidebarCollapsed={isCollapsed} />
+            <TaskSidebar 
+                selectedProject={selectedProject} 
+                isSidebarCollapsed={isCollapsed}
+                isTaskCollapsed={isTaskCollapsed}
+                setIsTaskCollapsed={setIsTaskCollapsed}
+            />
 
             {/* Main content area */}
             <div className="flex-1 bg-gray-50 dark:bg-[#1a1a1a]">
@@ -45,6 +70,7 @@ function Dashboard({ isDark, toggleTheme }) {
                     onNodesChange={updateRoadmapNodes}
                     isDark={isDark}
                     isCollapsed={isCollapsed}
+                    isTaskCollapsed={isTaskCollapsed}
                 />
             </div>
             {/* Floating AI Agent Chatbot */}

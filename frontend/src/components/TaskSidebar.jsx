@@ -6,26 +6,9 @@ import TaskSection from './TaskSection';
 import ArchivedTasksModal from './modals/ArchivedTasksModal';
 import { useProjects } from '../hooks/useProjects';
 import ApiClient from '../services/api';
-const TaskSidebar = ({ selectedProject, isSidebarCollapsed }) => {
-    const [isTaskCollapsed, setIsTaskCollapsed] = useState(() => {
-        try {
-            const savedState = localStorage.getItem('task-sidebar-collapsed');
-            return savedState ? JSON.parse(savedState) : true;
-        } catch (error) {
-            console.error('Failed to load task sidebar state:', error);
-            return true;
-        }
-    });
+const TaskSidebar = ({ selectedProject, isSidebarCollapsed, isTaskCollapsed, setIsTaskCollapsed }) => {
 
     const { createTask, updateTask, deleteTask, loading, error } = useProjects();
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('task-sidebar-collapsed', JSON.stringify(isTaskCollapsed));
-        } catch (error) {
-            console.error('Failed to save task sidebar state:', error);
-        }
-    }, [isTaskCollapsed]);
 
     // Use real tasks from selected project instead of mock data
     const [tasks, setTasks] = useState({

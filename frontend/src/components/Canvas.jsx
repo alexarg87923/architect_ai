@@ -13,11 +13,12 @@ import { RoadmapNode } from './nodes/RoadmapNode';
 import { StartNode } from './nodes/StartNode';
 import { SubtaskNode } from './nodes/SubtaskNode';
 import { ProjectOverviewModal } from './modals/ProjectOverviewModal';
+import { MdFilterCenterFocus } from "react-icons/md";
 
 const nodeTypes = { roadmap: RoadmapNode, start: StartNode, subtask: SubtaskNode };
 
 
-export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChange: onRoadmapNodesChange, isDark, isCollapsed }) => {
+export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChange: onRoadmapNodesChange, isDark, isCollapsed, isTaskCollapsed }) => {
   
   // Modal state for project overview
   const [isOverviewModalOpen, setIsOverviewModalOpen] = useState(false);
@@ -228,16 +229,25 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
   // Reactive viewport that updates when sidebar state changes
   const [viewport, setViewport] = useState({ x: 400, y: 0, zoom: 0.7 });
   const centerViewport = useCallback(() => {
-    const defaultViewport = isCollapsed
-      ? { x: 550, y: 0, zoom: 0.7 }
+    let defaultViewport = isCollapsed
+      ? { x: 600, y: 0, zoom: 0.7 }
       : { x: 400, y: 0, zoom: 0.7 };
+    if (!isTaskCollapsed && !isCollapsed) {
+      defaultViewport = { x: 300, y: 0, zoom: 0.7 };
+    }
     setViewport(defaultViewport);
-  }, [isCollapsed]);
+  }, [isCollapsed, isTaskCollapsed]);
 
-  // Update viewport when sidebar state changes
+  // Update viewport when sidebar or task sidebar state changes
   useEffect(() => {
-    setViewport(isCollapsed ? { x: 550, y: 0, zoom: 0.7 } : { x: 400, y: 0, zoom: 0.7 });
-  }, [isCollapsed]);
+    let defaultViewport = isCollapsed
+      ? { x: 600, y: 0, zoom: 0.7 }
+      : { x: 400, y: 0, zoom: 0.7 };
+    if (!isTaskCollapsed && !isCollapsed) {
+      defaultViewport = { x: 300, y: 0, zoom: 0.7 };
+    }
+    setViewport(defaultViewport);
+  }, [isCollapsed, isTaskCollapsed]);
 
   // Update nodes and edges when initialNodes or initialEdges change
   useEffect(() => {
@@ -281,21 +291,9 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], onNodesChan
       </ReactFlow>
       <button
         onClick={centerViewport}
-        className="absolute top-5 right-6 z-10 bg-white dark:bg-[#2a2a2a] hover:bg-gray-50 dark:hover:bg-[#252525] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-3 shadow-lg transition-all duration-200 hover:shadow-xl group"
+        className="absolute top-5 right-5 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg p-2 shadow-lg transition-all duration-200 hover:shadow-xl group text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 cursor-pointer"
       >
-        <svg
-          className="w-4 h-4 text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-          />
-        </svg>
+        <MdFilterCenterFocus className="w-6 h-6" />
       </button>
 
       <ProjectOverviewModal
