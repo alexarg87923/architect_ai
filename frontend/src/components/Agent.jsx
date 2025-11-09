@@ -3,6 +3,7 @@ import ApiClient from '../services/api';
 import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import { useProjects } from '../hooks/useProjects';
 import InputBox from './InputBox';
+import WelcomeBubble from './WelcomeBubble';
 // icon imports
 import MascotSVG from '../assets/face-1.svg?react';
 import { FaChevronDown, FaRobot } from "react-icons/fa6";
@@ -21,6 +22,10 @@ const Agent = () => {
       return false;
     }
   });
+  
+  // Simple state that resets on page refresh
+  const [showWelcomeBubble, setShowWelcomeBubble] = useState(true);
+  
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [selectedAction, setSelectedAction] = useState('Chat');
   const [messages, setMessages] = useState([]);
@@ -123,14 +128,21 @@ const Agent = () => {
     setShowProjectTypeMenu(false);
   };
 
-  // Function to handle chat box open/close with localStorage saving
+  // Function to handle chat box open/close
   const handleChatBoxToggle = (open) => {
     setIsOpen(open);
+    if (open) {
+      setShowWelcomeBubble(false); // Hide welcome bubble when chat opens
+    }
     try {
       localStorage.setItem('chatBoxOpen', JSON.stringify(open));
     } catch (error) {
       console.error('Failed to save chat box state:', error);
     }
+  };
+
+  const handleWelcomeBubbleDismiss = () => {
+    setShowWelcomeBubble(false);
   };
 
   const handleSendMessage = async () => {
@@ -201,7 +213,7 @@ const Agent = () => {
     }
   };
 
-    const startSimulation = async () => {
+  const startSimulation = async () => {
     if (isSimulating) return;
 
     if (!selectedProject) {
@@ -279,7 +291,14 @@ const Agent = () => {
 
   return (
     <>
-      {/* Chat Button */}
+      {/* Only show welcome bubble if chat is closed AND it hasn't been dismissed this session */}
+      {!isOpen && showWelcomeBubble && (
+        <WelcomeBubble 
+          onDismiss={handleWelcomeBubbleDismiss}
+        />
+      )}
+
+      {/* Regular Chat Button - always show when chat is closed */}
       {!isOpen && (
         <button
           onClick={() => handleChatBoxToggle(true)}
