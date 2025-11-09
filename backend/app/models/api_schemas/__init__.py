@@ -3,7 +3,12 @@ from .user import UserBase, UserCreate, UserUpdate, User, UserResponse, LoginReq
 from .project import ProjectBase, ProjectCreate, ProjectUpdate, Project, ProjectResponse
 from .task import TaskBase, TaskCreate, TaskUpdate, Task, TaskResponse, TasksByType
 from .conversation import ConversationState, ChatMessage, ChatRequest, ChatResponse
-from .roadmap import Roadmap, RoadmapNode, SubTask, ProjectSpecification, UpdateNode, ExpandNodeRequest, ProjectTag
+from .roadmap import (
+    Roadmap, Epic, Story, Architecture,
+    UpdateEpic, ExpandEpicRequest,
+    # Backward compatibility aliases
+    RoadmapNode, SubTask, ProjectSpecification
+)
 from .feedback import FeedbackBase, FeedbackCreate, FeedbackUpdate, Feedback, FeedbackResponse
 
 __all__ = [
@@ -16,8 +21,10 @@ __all__ = [
     "TaskBase", "TaskCreate", "TaskUpdate", "Task", "TaskResponse", "TasksByType",
     # Conversation schemas
     "ConversationState", "ChatMessage", "ChatRequest", "ChatResponse",
-    # Roadmap schemas
-    "Roadmap", "RoadmapNode", "SubTask", "ProjectSpecification", "UpdateNode", "ExpandNodeRequest", "ProjectTag",
+    # Roadmap schemas (new)
+    "Roadmap", "Epic", "Story", "Architecture", "UpdateEpic", "ExpandEpicRequest",
+    # Roadmap schemas (backward compatibility)
+    "RoadmapNode", "SubTask", "ProjectSpecification",
     # Feedback schemas
     "FeedbackBase", "FeedbackCreate", "FeedbackUpdate", "Feedback", "FeedbackResponse"
 ]

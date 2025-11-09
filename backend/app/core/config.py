@@ -28,7 +28,10 @@ class Settings(BaseSettings):
     # Groq API
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     GROQ_MODEL: str = "llama-3.3-70b-versatile"  # Supports tool use: https://console.groq.com/docs/tool-use
-    
+
+    # Google Gemini API (for Google ADK agent)
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
     
