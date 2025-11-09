@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.core.database import Task as TaskDB
-from app.models.agent import TaskCreate, TaskUpdate
+from app.models.database import Task as TaskDB
+from app.models.api_schemas import TaskCreate, TaskUpdate
 from typing import List, Optional, Dict
 from datetime import datetime
 

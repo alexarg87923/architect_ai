@@ -10,7 +10,7 @@ from openai import AsyncOpenAI
 from datetime import datetime
 
 from app.core.config import settings
-from app.models.agent import ChatMessage, ConversationState
+from app.models.api_schemas import ChatMessage, ConversationState
 from .tools import get_agent_tools
 from .roadmap_generation import RoadmapGenerationHandler
 

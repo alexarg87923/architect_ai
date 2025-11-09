@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.core.database import Feedback as FeedbackDB, User as UserDB
-from app.models.agent import FeedbackCreate, FeedbackUpdate, FeedbackResponse
+from app.models.database import Feedback as FeedbackDB, User as UserDB
+from app.models.api_schemas import FeedbackCreate, FeedbackUpdate, FeedbackResponse
 from typing import List, Optional
 from datetime import datetime
 

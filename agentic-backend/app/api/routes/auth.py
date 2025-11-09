@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.core.database import get_db, User as UserDB
+from app.core.database import get_db
+from app.models.database import User as UserDB
 from app.services.user_service import UserService
-from app.models.agent import LoginRequest, UserResponse, User, LoginResponse, ChangePasswordRequest, ChangePasswordResponse
+from app.models.api_schemas import LoginRequest, UserResponse, User, LoginResponse, ChangePasswordRequest, ChangePasswordResponse
 from typing import Dict
 
 router = APIRouter()

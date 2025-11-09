@@ -7,9 +7,10 @@ import shutil
 import os
 from datetime import datetime
 
-from app.core.database import get_db, User, Project, Conversation, Roadmap
+from app.core.database import get_db
+from app.models.database import User, Project, Conversation, Roadmap
 from app.services.feedback_service import FeedbackService
-from app.models.agent import UserCreate, FeedbackUpdate
+from app.models.api_schemas import UserCreate, FeedbackUpdate
 
 router = APIRouter()
 feedback_service = FeedbackService()

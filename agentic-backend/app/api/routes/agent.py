@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.database import get_db
-from app.models.agent import ConversationState, ChatMessage, Roadmap
+from app.models.api_schemas import ConversationState, ChatMessage, Roadmap
 from app.services.agent_service import AgentService
 from app.services.database_service import DatabaseService
 import uuid

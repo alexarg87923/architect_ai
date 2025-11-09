@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import agent, auth, projects, admin, simulation, feedback
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine
+from app.models.database import Base
 import logging
 
 # RUN APP --> uvicorn app.main:app --reload

@@ -19,10 +19,11 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from sqlalchemy.orm import Session
-from app.core.database import engine, Base, get_db
+from app.core.database import engine, get_db
+from app.models.database import Base
 from app.services.user_service import UserService
 from app.services.project_service import ProjectService
-from app.models.agent import UserCreate, ProjectCreate
+from app.models.api_schemas import UserCreate, ProjectCreate
 import logging
 
 # Configure logging
