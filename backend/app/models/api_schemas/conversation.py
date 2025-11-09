@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     action_type: str = "chat"  # "chat", "edit", "expand"
     conversation_state: Optional[ConversationState] = None
+    selected_story_ids: Optional[List[int]] = None
 
 class ChatResponse(BaseModel):
     """Response model for chat interactions"""

@@ -493,13 +493,90 @@ const SettingsModal = ({ isOpen, onClose }) => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 pb-2 border-b border-gray-200 dark:border-[#3C3C3C]">Keyboard Shortcuts</h3>
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <div className="flex justify-center mb-4">
-                        <FaRegKeyboard className="text-4xl text-gray-400 dark:text-gray-500" />
+
+                  <div className="mb-4 text-xs text-gray-600 dark:text-gray-400">
+                    These hotkeys work on the canvas.
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Zoom In</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">Ctrl</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">/</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-2">Cmd</span>
+                        +
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-2 mr-1">+</span>
+                        <span className="text-gray-500">or</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-1">=</span>
+                        <span className="text-gray-500 mx-2">or</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a]">]</span>
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Coming Soon</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">Keyboard shortcuts will be available in a future update</div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Zoom Out</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">Ctrl</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">/</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-2">Cmd</span>
+                        +
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-2">-</span>
+                        <span className="text-gray-500 mx-2">or</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a]">[</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Reset Zoom (Fit View)</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">Ctrl</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">/</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-2">Cmd</span>
+                        +
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-2">0</span>
+                      </div>
+                    </div>
+
+                    
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Zoom Presets</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">1</span>
+                        <span className="text-gray-500 mr-2">(0.5x)</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">2</span>
+                        <span className="text-gray-500 mr-2">(0.75x)</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">3</span>
+                        <span className="text-gray-500">(1.0x)</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Open Chat</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a]">C</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Close Chat</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a]">Esc</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Toggle Chat</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">Ctrl</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-1">/</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] mr-2">Cmd</span>
+                        +
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-2 mr-1">Shift</span>
+                        +
+                        <span className="inline-block px-1.5 py-0.5 rounded border border-gray-300 dark:border-[#3C3C3C] bg-white dark:bg-[#2a2a2a] ml-2">C</span>
+                      </div>
                     </div>
                   </div>
                 </div>

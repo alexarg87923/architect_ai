@@ -56,6 +56,95 @@ const FitViewOnChange = ({ containerRef, nodesToFitView }) => {
   return null; // This component doesn't render anything
 };
 
+// Keyboard shortcuts inside ReactFlow provider
+const KeyboardZoomShortcuts = () => {
+  const { zoomIn, zoomOut, fitView, setViewport, getViewport } = useReactFlow();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore when typing in inputs/textareas/contenteditable
+      const target = e.target;
+      if (
+        target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        )
+      ) {
+        return;
+      }
+
+      const isModifier = e.ctrlKey || e.metaKey;
+      const key = e.key;
+      const isPlus = key === '+' || key === '=';
+      const isMinus = key === '-';
+      const isZero = key === '0';
+
+      // Global zoom with Ctrl/Cmd
+      if (isModifier && (isPlus || isMinus || isZero)) {
+        e.preventDefault();
+        if (isPlus) {
+          try { zoomIn({ duration: 120 }); } catch (_) {}
+        } else if (isMinus) {
+          try { zoomOut({ duration: 120 }); } catch (_) {}
+        } else if (isZero) {
+          try { fitView({ minZoom: 0.6, maxZoom: 0.6, duration: 120 }); } catch (_) {}
+        }
+        return;
+      }
+
+      // Additional non-modifier bindings removed: panning (arrows) and Fit (F)
+
+      // Bracket zoom
+      if (key === '[') {
+        e.preventDefault();
+        try { zoomOut({ duration: 120 }); } catch (_) {}
+        return;
+      }
+      if (key === ']') {
+        e.preventDefault();
+        try { zoomIn({ duration: 120 }); } catch (_) {}
+        return;
+      }
+
+      // Number presets for zoom levels (1=0.5x, 2=0.75x, 3=1.0x)
+      if (key === '1' || key === '2' || key === '3') {
+        e.preventDefault();
+        const zoomMap = { '1': 0.5, '2': 0.75, '3': 1.0 };
+        const desired = zoomMap[key];
+        try {
+          const vp = getViewport ? getViewport() : null;
+          if (vp && setViewport) {
+            setViewport({ x: vp.x, y: vp.y, zoom: desired, duration: 120 });
+          }
+        } catch (_) {}
+        return;
+      }
+
+      // Open/close/toggle chatbot
+      if (key === 'Escape') {
+        try { window.dispatchEvent(new CustomEvent('agent:close')); } catch (_) {}
+        return;
+      }
+      if (key === 'c' || key === 'C') {
+        e.preventDefault();
+        try { window.dispatchEvent(new CustomEvent('agent:open')); } catch (_) {}
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'c' || key === 'C')) {
+        e.preventDefault();
+        try { window.dispatchEvent(new CustomEvent('agent:toggle')); } catch (_) {}
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomIn, zoomOut, fitView, setViewport, getViewport]);
+
+  return null;
+};
+
 
 
 export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpics = [], onNodesChange: onRoadmapNodesChange, isDark, isCollapsed, isTaskCollapsed }) => {
@@ -416,6 +505,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
         // onViewportChange={setViewport} // Allow manual viewport changes
       >
         <Background />
+        <KeyboardZoomShortcuts />
         <FitViewOnChange containerRef={containerRef} nodesToFitView={nodesToFitView} />
         <Controls showZoom={false} showInteractive={false} position="top-right" fitViewOptions={{ minZoom: 0.6, maxZoom: 0.6, duration: 100 }} className="border border-gray-200 dark:border-[#3C3C3C]" />
       </ReactFlow>

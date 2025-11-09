@@ -48,17 +48,18 @@ class ApiClient {
   }
 
   // Agent API Methods
-  async chatWithAgent(message, sessionId = null, actionType = 'chat', conversationState = null) {
+  async chatWithAgent(message, sessionId = null, actionType = 'chat', conversationState = null, selectedStoryIds = []) {
     const userId = localStorage.getItem('user_id');
     
-    const response = await this.request('/api/agent/chat', {
+    const response = await this.request('/api/agent/conversate', {
       method: 'POST',
       body: {
         message,
         session_id: sessionId,
         action_type: actionType,
         conversation_state: conversationState,
-        user_id: userId ? parseInt(userId) : null
+        user_id: userId ? parseInt(userId) : null,
+        selected_story_ids: selectedStoryIds
       },
     });
     
@@ -68,6 +69,28 @@ class ApiClient {
       conversationState: response.conversation_state,
       sessionId: response.session_id,
       actionButton: response.action_button,
+      currentRoadmap: response.conversation_state?.current_roadmap,
+      phase: response.conversation_state?.phase,
+    };
+  }
+
+  async createRoadmap(message, sessionId = null, conversationState = null) {
+    const userId = localStorage.getItem('user_id');
+    
+    const response = await this.request('/api/agent/roadmap', {
+      method: 'POST',
+      body: {
+        message,
+        session_id: sessionId,
+        conversation_state: conversationState,
+        user_id: userId ? parseInt(userId) : null
+      },
+    });
+    
+    return {
+      agentResponse: response.agent_response,
+      conversationState: response.conversation_state,
+      sessionId: response.session_id,
       currentRoadmap: response.conversation_state?.current_roadmap,
       phase: response.conversation_state?.phase,
     };

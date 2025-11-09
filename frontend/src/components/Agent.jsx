@@ -4,6 +4,7 @@ import { useSelectedProject } from '../contexts/SelectedProjectContext';
 import { useProjects } from '../hooks/useProjects';
 import InputBox from './InputBox';
 import WelcomeBubble from './WelcomeBubble';
+import MarkdownMessage from './MarkdownMessage';
 // icon imports
 import MascotSVG from '../assets/face-1.svg?react';
 import { RxCross2 } from "react-icons/rx";
@@ -51,6 +52,7 @@ const Agent = () => {
   const [isResizing, setIsResizing] = useState(false);
   const resizeStartRef = useRef({ startY: 0, startHeight: 0 });
   const [isSimulating, setIsSimulating] = useState(false);
+  const [selectedStoryIds, setSelectedStoryIds] = useState([]);
 
   const actionOptions = [
     { id: 'Chat', label: 'Chat', description: 'General conversation' },
@@ -71,10 +73,10 @@ const Agent = () => {
     scrollToBottom();
   }, [messages]);
 
-  const shouldDisableInput = !selectedProject || 
-    (selectedProject && 
-     Array.isArray(selectedProject.roadmapNodes) && 
-     selectedProject.roadmapNodes.length > 0);
+  // Check if project has a roadmap
+  const hasRoadmap = selectedProject && 
+    ((Array.isArray(selectedProject.roadmapNodes) && selectedProject.roadmapNodes.length > 0) ||
+     (selectedProject.roadmap_data?.epics && selectedProject.roadmap_data.epics.length > 0));
 
   useEffect(() => {
     if (isOpen) {
@@ -90,8 +92,10 @@ const Agent = () => {
         const welcomeMessage = {
           id: Date.now(),
           type: 'agent',
-          content: shouldDisableInput 
+          content: !selectedProject
             ? "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your ideas come to life. To get started, please select a new project or create one."
+            : hasRoadmap
+            ? "Hi! I'm your AI Project Manager. I can help you with questions about your project and roadmap. How can I assist you today?"
             : "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your ideas come to life. To get started give me a description of your project.",
           timestamp: new Date()
         };
@@ -108,7 +112,7 @@ const Agent = () => {
         }
       }
     }
-  }, [isOpen, hasShownWelcome, shouldDisableInput, selectedProject?.id]);
+  }, [isOpen, hasShownWelcome, selectedProject, hasRoadmap]);
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -200,6 +204,39 @@ const Agent = () => {
     return () => window.removeEventListener('agent:close', handleExternalClose);
   }, []);
 
+  // Open chat on external event
+  useEffect(() => {
+    const handleExternalOpen = () => {
+      try {
+        setIsOpen(true);
+        setShowWelcomeBubble(false);
+        localStorage.setItem('chatBoxOpen', JSON.stringify(true));
+      } catch (error) {
+        console.error('Failed to save chat box state:', error);
+      }
+    };
+    window.addEventListener('agent:open', handleExternalOpen);
+    return () => window.removeEventListener('agent:open', handleExternalOpen);
+  }, []);
+
+  // Toggle chat on external event
+  useEffect(() => {
+    const handleExternalToggle = () => {
+      try {
+        setIsOpen(prev => {
+          const next = !prev;
+          if (next) setShowWelcomeBubble(false);
+          localStorage.setItem('chatBoxOpen', JSON.stringify(next));
+          return next;
+        });
+      } catch (error) {
+        console.error('Failed to save chat box state:', error);
+      }
+    };
+    window.addEventListener('agent:toggle', handleExternalToggle);
+    return () => window.removeEventListener('agent:toggle', handleExternalToggle);
+  }, []);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
@@ -222,13 +259,26 @@ const Agent = () => {
         project_id: selectedProject?.id || null
       } : null;
 
-      // Call the real agent API
-      const response = await ApiClient.chatWithAgent(
-        userMessage.content,
-        sessionId,
-        selectedAction.toLowerCase(),
-        stateWithProject
-      );
+      // Determine which API to call based on whether we're creating a roadmap or just chatting
+      let response;
+      if (hasRoadmap || selectedAction.toLowerCase() !== 'chat') {
+        // For existing projects with roadmaps, use conversation API
+        // For specific actions (Edit, Expand, Crawl), use conversation API
+        response = await ApiClient.chatWithAgent(
+          userMessage.content,
+          sessionId,
+          selectedAction.toLowerCase(),
+          stateWithProject,
+          selectedStoryIds
+        );
+      } else {
+        // For new projects without roadmaps, use roadmap creation API
+        response = await ApiClient.createRoadmap(
+          userMessage.content,
+          sessionId,
+          stateWithProject
+        );
+      }
 
       // Update session and conversation state
       if (response.sessionId) {
@@ -342,7 +392,7 @@ const Agent = () => {
                     ? 'dark:bg-gray-400 text-gray-200 cursor-not-allowed' 
                     : 'cursor-pointer'
                 }`}
-                title={`Simulate ${availableProjectTypes.find(p => p.value === selectedProjectType)?.label} conversation flow`}
+                title="Simulate conversation flow"
               >
                 <FaRobot className="w-5 h-5 text-gray-600 dark:text-gray-100 pb-0.5" />
               </button>
@@ -371,7 +421,10 @@ const Agent = () => {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 dark:bg-[#3A3A3A] text-gray-800 dark:text-gray-200'
                   }`}>
-                    <p className="text-sm">{message.content}</p>
+                    <MarkdownMessage
+                      content={message.content}
+                      isUserMessage={message.type === 'user'}
+                    />
                   </div>
                 </div>
               </div>
@@ -422,7 +475,9 @@ const Agent = () => {
             actionOptions={actionOptions}
             actionMenuRef={actionMenuRef}
             shouldFocus={isOpen}
-            disabled={shouldDisableInput}
+            disabled={false}
+            selectedProject={selectedProject}
+            onSelectedStoriesChange={setSelectedStoryIds}
           />
         </div>
       )}

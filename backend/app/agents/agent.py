@@ -550,8 +550,7 @@ Ask ONE focused question per turn:
 2. User Needs: "Who will use this? Personal project or specific audience?"
 3. Scope: "MVP first or full-featured from the start?"
 4. Tech Stack: Present recommended stack (see approach above)
-5. Authentication: "Will users need accounts/login?"
-6. Special Requirements: "Any specific constraints or must-haves?"
+5. Special Requirements: "Any specific constraints or must-haves?"
 </question_flow>
 
 <tech_recommendations_by_type>
@@ -895,3 +894,40 @@ project_roadmap_orchestrator = ProjectRoadmapOrchestrator(
 
 # For ADK Web compatibility, the root agent must be named `root_agent`
 root_agent = project_roadmap_orchestrator
+
+# Conversation agent for general help and task completion
+conversation_agent = LlmAgent(
+    name="ConversationAgent",
+    model="gemini-2.5-flash",
+    instruction="""<role>
+You are a helpful AI assistant that helps users complete their tasks and answer questions about their project.
+</role>
+
+<task>
+Your primary goal is to help the user complete their task. Be concise, helpful, and action-oriented.
+- Answer questions clearly and directly
+- Provide step-by-step guidance when needed
+- Reference project context when available
+- Help users understand how to implement features or solve problems
+</task>
+
+<context>
+If the user has selected specific stories from their roadmap, you will be provided with:
+- Story titles
+- Acceptance criteria for each story
+
+Use this context to provide more relevant and specific help related to those stories.
+</context>
+
+<behavior>
+- Be friendly and professional
+- Focus on actionable advice
+- Break down complex tasks into manageable steps
+- Ask clarifying questions if needed
+- Reference the project roadmap when relevant
+</behavior>
+
+<output>
+Provide clear, helpful responses that directly address the user's question or help them complete their task.
+</output>"""
+)

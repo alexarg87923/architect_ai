@@ -5,19 +5,22 @@ import ReactDOM from "react-dom";
 
 export const EditNodeSidebar = ({ node, isOpen, onClose, onDelete, onUpdate }) => {
   const [title, setTitle] = useState(node?.title || "");
-  const [description, setDescription] = useState(node?.description || "");
+  const [comments, setComments] = useState(node?.comments || node?.description || "");
+  const [acceptanceCriteria, setAcceptanceCriteria] = useState(node?.acceptance_criteria || []);
 
   useEffect(() => {
     if (node) {
       setTitle(node.title);
-      setDescription(node.description);
+      setComments(node.comments ?? node.description ?? "");
+      setAcceptanceCriteria(node.acceptance_criteria || []);
     }
   }, [node]);
 
   if (!isOpen || !node) return null;
 
   const handleSave = () => {
-    onUpdate(node.id, { title, description });
+    const cleanedCriteria = (acceptanceCriteria || []).map(c => (c ?? "").trim()).filter(c => c.length > 0);
+    onUpdate(node.id, { title, comments, acceptance_criteria: cleanedCriteria });
     onClose();
   };
 
@@ -56,14 +59,55 @@ export const EditNodeSidebar = ({ node, isOpen, onClose, onDelete, onUpdate }) =
 
           <div>
             <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
-              Description
+              Comments
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
               rows={5}
               className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-[#3C3C3C] bg-transparent text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+              Acceptance Criteria
+            </label>
+            <div className="space-y-2">
+              {(acceptanceCriteria || []).length === 0 && (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No acceptance criteria yet.</div>
+              )}
+              {(acceptanceCriteria || []).map((crit, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={crit}
+                    onChange={(e) => {
+                      const next = [...acceptanceCriteria];
+                      next[idx] = e.target.value;
+                      setAcceptanceCriteria(next);
+                    }}
+                    className="flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-[#3C3C3C] bg-transparent text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder={`Criterion ${idx + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAcceptanceCriteria(acceptanceCriteria.filter((_, i) => i !== idx))}
+                    className="px-2 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-[#3A3A3A] rounded-md"
+                    title="Remove criterion"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setAcceptanceCriteria([...(acceptanceCriteria || []), ""])}
+                className="px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-[#3A3A3A] rounded-md"
+              >
+                + Add Criterion
+              </button>
+            </div>
           </div>
         </div>
 
