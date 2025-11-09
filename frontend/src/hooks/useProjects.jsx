@@ -43,7 +43,7 @@ export const useProjects = () => {
         status: project.status,
         createdAt: new Date(project.created_at),
         updatedAt: new Date(project.updated_at),
-        roadmapNodes: project.roadmap_data?.nodes || [],
+        roadmapNodes: project.roadmap_data?.epics || [],
         tasks: project.tasks ? {
           "daily-todos": project.tasks.daily_todos.map(task => ({
             id: task.id,
@@ -148,7 +148,7 @@ export const useProjects = () => {
         status: updatedProject.status,
         createdAt: new Date(updatedProject.created_at),
         updatedAt: new Date(updatedProject.updated_at),
-        roadmapNodes: updatedProject.roadmap_data?.nodes || [],
+        roadmapNodes: updatedProject.roadmap_data?.epics || [],
         tasks: updatedProject.tasks ? {
           "daily-todos": updatedProject.tasks.daily_todos.map(task => ({
             id: task.id,

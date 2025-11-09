@@ -23,10 +23,9 @@ const FitViewOnChange = ({ containerRef, nodesToFitView }) => {
     fitView({
       minZoom: 0.6,
       maxZoom: 0.6,
-      nodes: nodesToFitView,
       duration: 100,
     });
-  }, [fitView, nodesToFitView]);
+  }, [fitView]);
 
   // Observe container dimension changes
   useEffect(() => {
@@ -154,9 +153,9 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
           data: {
             // New schema (epics)
             title: epic.name || epic.title, // Support both name (new) and title (old)
-            description: epic.description,
-            estimatedDays: epic.estimated_days || epic.estimatedDays,
-            estimatedHours: epic.estimated_hours || epic.estimatedHours,
+            description: epic.description || 'No description provided',
+            estimatedDays: epic.estimated_days || epic.estimatedDays || 7, // Default to 7 days if not provided
+            estimatedHours: epic.estimated_hours || epic.estimatedHours || 0,
             tags: epic.tags || [],
             status: epic.status || 'pending',
             category: epic.tags?.[0] || epic.priority || 'development', // Use first tag or priority as category
@@ -168,6 +167,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
             onOpenOverviewModal: openOverviewModal
           },
           deletable: false,
+          hidden: false, // Explicitly set to not hidden
         });
 
         // Add story nodes for this epic
@@ -283,7 +283,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const nodesToFitView = nodes.filter(node => node.id === '1'); // This will center the viewport on the node below the startNode
+  const nodesToFitView = nodes; // Show all nodes in viewport
 
   // Update nodes and edges when initialNodes or initialEdges change
   useEffect(() => {
@@ -301,6 +301,11 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
 
   return (
     <div ref={containerRef} className="flex-1 h-full">
+      <style>{`
+        .react-flow__node {
+          visibility: visible !important;
+        }
+      `}</style>
       <ReactFlow
         panOnScroll
         nodes={nodes}
@@ -312,6 +317,8 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
         colorMode={isDark ? 'dark' : 'light'}
         nodesDraggable={false}
         nodesConnectable={false}
+        onlyRenderVisibleElements={false}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.4 }}
         fitViewOptions={{
           padding: 0.2,
           maxZoom: 1.2,
@@ -322,7 +329,7 @@ export const Canvas = ({ hasProject, projectName, roadmapNodes = [], roadmapEpic
       >
         <Background />
         <FitViewOnChange containerRef={containerRef} nodesToFitView={nodesToFitView} />
-        <Controls showZoom={false} showInteractive={false} position="top-right" fitViewOptions={{ minZoom: 0.6, maxZoom: 0.6, nodes: nodesToFitView, duration: 100 }} className="border border-gray-200 dark:border-[#3C3C3C]" />
+        <Controls showZoom={false} showInteractive={false} position="top-right" fitViewOptions={{ minZoom: 0.6, maxZoom: 0.6, duration: 100 }} className="border border-gray-200 dark:border-[#3C3C3C]" />
       </ReactFlow>
 
       <ProjectOverviewModal

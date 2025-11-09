@@ -17,7 +17,6 @@ FUTURE IDEAS:
 
 TODOS:
 - DONE -- Connect Agent to the frontend Agent.jsx component (initial roadmap creation flow)
-- DONE -- Add 2-3 more diverse LLM simulated project tests to the backend - test_roadmap_generation_only.py
 - DONE -- Properly style the Agent.jsx component
 
 - Improve the agent-user interaction for creating a project roadmap --> be like "It seems like you do not have a roadmap for this project. Let's create one together."
@@ -28,7 +27,7 @@ TODOS:
 - DONE -- Implement basic settings page (change password, change email, etc.)
 
 - Create superuser in the db, and protect certain pages and endpoints from non-superusers (populate superuser in the seed_database.py script, this will be my account)
-  - PROTECT: admin page, simulation endpoints (should not appear in the UI for non-superusers)
+  - PROTECT: admin page (should not appear in the UI for non-superusers)
 
 - Change the Landing page buttons if a logged in user is on the page
 - Connect the waitlist form to the backend and to the Admin Panel

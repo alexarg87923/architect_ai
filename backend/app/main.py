@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import agent, auth, projects, admin, feedback  # simulation disabled (uses old agent_service)
+from app.api.routes import agent, auth, projects, admin, feedback
 from app.core.config import settings
 from app.core.database import engine
 from app.models.database import Base
@@ -42,7 +42,6 @@ app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
 app.include_router(projects.router, prefix="/api", tags=["projects"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-# app.include_router(simulation.router, prefix="/api", tags=["simulation"])  # Disabled - uses old agent_service
 app.include_router(feedback.router, prefix="/api/feedback", tags=["feedback"])
 
 @app.get("/")

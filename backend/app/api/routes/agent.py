@@ -139,10 +139,14 @@ async def chat_with_agent(
             except Exception as e:
                 logger.error(f"Error parsing roadmap: {e}", exc_info=True)
 
+        # Get project_id from incoming conversation state if available
+        project_id = request.conversation_state.project_id if request.conversation_state and request.conversation_state.project_id else None
+
         # Create updated conversation state
         updated_state = ConversationState(
             session_id=session_id,
-            user_id=request.conversation_state.user_id if request.conversation_state else None,
+            user_id=int(user_id),  # Use the user_id variable already set at the top
+            project_id=project_id,  # Link conversation to project
             phase=phase,
             specifications_complete=context_complete,
             project_specification=current_roadmap.project if current_roadmap else None,
@@ -151,12 +155,13 @@ async def chat_with_agent(
             nodes_needing_subtasks=[]
         )
 
-        # Save conversation state to database
-        database_service.save_conversation_state(db, updated_state)
+        # Save conversation state to database (this also saves the roadmap internally)
+        save_success = database_service.save_conversation_state(db, updated_state)
 
-        # Save roadmap if generated
-        if current_roadmap:
-            database_service.save_roadmap(db, session_id, current_roadmap, updated_state.user_id)
+        if save_success:
+            logger.info(f"Conversation and roadmap saved for session {session_id}")
+        else:
+            logger.error(f"Failed to save conversation state for session {session_id}")
 
         return ChatResponse(
             agent_response=agent_response,

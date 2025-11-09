@@ -39,7 +39,6 @@ backend/
 │   │       ├── agent.py
 │   │       ├── feedback.py
 │   │       ├── admin.py
-│   │       └── simulation.py
 │   └── services/                  # Business logic layer
 │       ├── __init__.py
 │       ├── user_service.py
@@ -51,10 +50,6 @@ backend/
 │       │   ├── orchestrator.py
 │       │   ├── roadmap_generation.py
 │       │   └── tools.py
-│       └── user_simulation_service/ # User simulation for testing
-│           ├── conversation_orchestrator.py
-│           ├── project_prompts.py
-│           └── user_simulator.py
 ├── tests/                         # Test suite
 │   ├── test_agent.py
 │   ├── test_api.py

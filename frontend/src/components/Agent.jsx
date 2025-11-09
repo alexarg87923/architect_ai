@@ -6,7 +6,7 @@ import InputBox from './InputBox';
 import WelcomeBubble from './WelcomeBubble';
 // icon imports
 import MascotSVG from '../assets/face-1.svg?react';
-import { FaChevronDown, FaRobot } from "react-icons/fa6";
+import { FaChevronDown } from "react-icons/fa6";
 import { RxCross2 } from "react-icons/rx";
 
 
@@ -36,10 +36,21 @@ const Agent = () => {
   const [error, setError] = useState(null);
   const [currentPhase, setCurrentPhase] = useState('discovery');
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [selectedProjectType, setSelectedProjectType] = useState('codementor');
   const messagesEndRef = useRef(null);
   const actionMenuRef = useRef(null);
+
+  // State for resizable height
+  const [chatHeight, setChatHeight] = useState(() => {
+    try {
+      const savedHeight = localStorage.getItem('chatBoxHeight');
+      return savedHeight ? parseInt(savedHeight, 10) : 450;
+    } catch (error) {
+      console.error('Failed to load chat box height:', error);
+      return 450;
+    }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartRef = useRef({ startY: 0, startHeight: 0 });
 
   const actionOptions = [
     { id: 'Chat', label: 'Chat', description: 'General conversation' },
@@ -47,11 +58,6 @@ const Agent = () => {
     { id: 'Expand', label: 'Expand', description: 'Expand from node' },
     { id: 'Crawl', label: 'Crawl', description: 'Crawl specific resource' }
   ];
-
-  const [availableProjectTypes, setAvailableProjectTypes] = useState([]);
-  const [loadingProjectOptions, setLoadingProjectOptions] = useState(false);
-  const [showProjectTypeMenu, setShowProjectTypeMenu] = useState(false);
-  const projectTypeMenuRef = useRef(null);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
@@ -79,40 +85,11 @@ const Agent = () => {
     }
   }, [isOpen, hasShownWelcome]);
 
-
-  // Fetch available project types when component mounts
-  useEffect(() => {
-    const fetchProjectOptions = async () => {
-      try {
-        setLoadingProjectOptions(true);
-        const result = await ApiClient.getProjectOptions();
-        if (result.success && result.projectOptions) {
-          setAvailableProjectTypes(result.projectOptions);
-        }
-      } catch (error) {
-        console.error('Failed to fetch project options:', error);
-        // Fallback to default options if API fails
-        setAvailableProjectTypes([
-          { value: 'codementor', label: 'CodeMentor' },
-          { value: 'taskflow', label: 'TaskFlow' },
-          { value: 'healthtracker', label: 'HealthTracker' }
-        ]);
-      } finally {
-        setLoadingProjectOptions(false);
-      }
-    };
-
-    fetchProjectOptions();
-  }, []);
-
   // Close action menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
         setShowActionMenu(false);
-      }
-      if (projectTypeMenuRef.current && !projectTypeMenuRef.current.contains(event.target)) {
-        setShowProjectTypeMenu(false);
       }
     };
 
@@ -122,11 +99,50 @@ const Agent = () => {
     };
   }, []);
 
-
-  const handleProjectTypeSelect = (projectType) => {
-    setSelectedProjectType(projectType);
-    setShowProjectTypeMenu(false);
+  // Handle resize functionality
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartRef.current = {
+      startY: e.clientY,
+      startHeight: chatHeight
+    };
   };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    // Add cursor style to body
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e) => {
+      const deltaY = resizeStartRef.current.startY - e.clientY;
+      const newHeight = Math.max(450, Math.min(800, resizeStartRef.current.startHeight + deltaY));
+      setChatHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem('chatBoxHeight', chatHeight.toString());
+      } catch (error) {
+        console.error('Failed to save chat box height:', error);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, chatHeight]);
 
   // Function to handle chat box open/close
   const handleChatBoxToggle = (open) => {
@@ -161,12 +177,18 @@ const Agent = () => {
     setError(null);
 
     try {
+      // Add project_id to conversation state if we have a selected project
+      const stateWithProject = conversationState ? {
+        ...conversationState,
+        project_id: selectedProject?.id || null
+      } : null;
+
       // Call the real agent API
       const response = await ApiClient.chatWithAgent(
         userMessage.content,
         sessionId,
         selectedAction.toLowerCase(),
-        conversationState
+        stateWithProject
       );
 
       // Update session and conversation state
@@ -178,6 +200,20 @@ const Agent = () => {
         // Update current phase
         if (response.conversationState.phase) {
           setCurrentPhase(response.conversationState.phase);
+        }
+
+        // If roadmap was generated, update the selected project with the roadmap data
+        if (response.conversationState.current_roadmap && selectedProject) {
+          const updatedProject = {
+            ...selectedProject,
+            roadmap_data: response.conversationState.current_roadmap,
+            roadmapNodes: response.conversationState.current_roadmap.epics || []
+          };
+          updateSelectedProject(updatedProject);
+          console.log('✅ Updated selected project with generated roadmap');
+
+          // Refresh the projects list to ensure persistence
+          refreshProjects();
         }
       }
 
@@ -213,82 +249,6 @@ const Agent = () => {
     }
   };
 
-  const startSimulation = async () => {
-    if (isSimulating) return;
-
-    if (!selectedProject) {
-      setError('Please select a project first');
-      return;
-    }
-
-    setIsSimulating(true);
-    setError(null);
-
-    try {
-      // Call the backend simulation endpoint with the selected project ID and project type
-      const result = await ApiClient.runSimulation(selectedProject.id, selectedProjectType);
-      
-      if (result.success) {
-        // Clear existing messages
-        setMessages([]);
-        
-        // Add welcome message
-        const welcomeMessage = {
-          id: Date.now(),
-          type: 'agent',
-          content: "Hi! I'm your AI Project Manager. I will create a roadmap for your project to help your idea come to life. To get started give me a description of your project.",
-          timestamp: new Date()
-        };
-        setMessages([welcomeMessage]);
-        
-        // Process all conversation messages
-        const conversationMessages = result.messages.map((msg, index) => ({
-          id: Date.now() + index + 1,
-          type: msg.role === 'user' ? 'user' : 'agent',
-          content: msg.content,
-          timestamp: new Date(msg.timestamp || Date.now())
-        }));
-        
-        // Add conversation messages
-        setMessages(prev => [...prev, ...conversationMessages]);
-        
-        // Update session and conversation state
-        if (result.sessionId) {
-          setSessionId(result.sessionId);
-        }
-        if (result.conversationState) {
-          setConversationState(result.conversationState);
-          if (result.conversationState.phase) {
-            setCurrentPhase(result.conversationState.phase);
-          }
-        }
-        
-        // Refresh the selected project to get the updated roadmap data
-        if (result.roadmap) {
-          const updatedProject = {
-            ...selectedProject,
-            roadmap_data: result.roadmap,
-            roadmapNodes: result.roadmap.nodes || [] // Ensure roadmapNodes is also updated
-          };
-          updateSelectedProject(updatedProject);
-          console.log('✅ Updated selected project with new roadmap data');
-          
-          // Refresh the projects list to ensure all components have the latest data
-          await refreshProjects();
-        }
-        
-        console.log(`Simulation complete! Generated roadmap with ${result.totalRounds} conversation rounds.`);
-      }
-      
-    } catch (error) {
-      console.error('Simulation failed:', error);
-      setError('Simulation failed. Please try again.');
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
-
   return (
     <>
       {/* Only show welcome bubble if chat is closed AND it hasn't been dismissed this session */}
@@ -310,68 +270,29 @@ const Agent = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-4 w-[450px] h-[450px] bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-xl border border-gray-200 dark:border-[#3C3C3C] flex flex-col z-50">
+        <div 
+          className="fixed bottom-6 right-4 w-[450px] bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-xl border border-gray-200 dark:border-[#3C3C3C] flex flex-col z-50"
+          style={{ height: `${chatHeight}px` }}
+        >
+          {/* Resize Handle */}
+          <div
+            onMouseDown={handleResizeStart}
+            className={`absolute top-0 left-0 right-0 h-2 cursor-ns-resize flex items-center justify-center group hover:bg-blue-500/10 rounded-t-2xl transition-colors ${
+              isResizing ? 'bg-blue-500/20' : ''
+            }`}
+            style={{ zIndex: 10 }}
+          >
+            <div className={`w-12 h-1 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500 transition-colors ${
+              isResizing ? 'bg-blue-500' : ''
+            }`} />
+          </div>
+
           {/* Header */}
-          <div className="flex items-center justify-between dark:text-white px-4 py-3 rounded-t-2xl">
+          <div className="flex items-center justify-between dark:text-white px-4 py-3 rounded-t-2xl pt-4">
             <div className="text-sm font-medium flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] rounded-xl py-1 px-2 cursor-pointer transition-colors">
               This chat <FaChevronDown className="w-3 h-3" />
             </div>
             <div className="flex items-center gap-2">
-              {/* Project Type Dropdown */}
-              <div className="relative" ref={projectTypeMenuRef}>
-                {showProjectTypeMenu && (
-                  <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-[#3C3C3C] rounded-lg shadow-lg py-1 z-10">
-                    {loadingProjectOptions ? (
-                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                        Loading...
-                      </div>
-                    ) : (
-                      availableProjectTypes.map((projectType) => (
-                        <button
-                          key={projectType.value}
-                          onClick={() => handleProjectTypeSelect(projectType.value)}
-                          className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-[#3A3A3A] transition-colors ${
-                            selectedProjectType === projectType.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {projectType.label}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-                
-                <button
-                  onClick={() => setShowProjectTypeMenu(!showProjectTypeMenu)}
-                  disabled={isSimulating || loadingProjectOptions}
-                  className={`text-sm font-medium flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3A3A] rounded-xl py-1 px-2 cursor-pointer transition-colors ${
-                    isSimulating || loadingProjectOptions
-                      ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                      : ' cursor-pointer'
-                  }`}
-                  title="Select project type for simulation"
-                >
-                  <span className="text-sm">
-                    {loadingProjectOptions ? 'Loading...' : availableProjectTypes.find(p => p.value === selectedProjectType)?.label || 'CodeMentor'}
-                  </span>
-                  <FaChevronDown className="w-3 h-3" />
-                </button>
-              </div>
-              
-              {/* Simulation Button */}
-              <button
-                onClick={startSimulation}
-                disabled={isSimulating}
-                className={`p-1 hover:bg-gray-200 dark:hover:bg-[#3A3A3A] rounded-full transition-colors ${
-                  isSimulating 
-                    ? 'dark:bg-gray-400 text-gray-200 cursor-not-allowed' 
-                    : 'cursor-pointer'
-                }`}
-                title={`Simulate ${availableProjectTypes.find(p => p.value === selectedProjectType)?.label} conversation flow`}
-              >
-                <FaRobot className="w-5 h-5 text-gray-600 dark:text-gray-100 pb-0.5" />
-              </button>
-              
               {/* Close Button */}
               <button
                 onClick={() => handleChatBoxToggle(false)}
@@ -426,20 +347,6 @@ const Agent = () => {
                 <div className="flex gap-2 max-w-[85%]">
                   <div className="bg-red-100 dark:bg-red-900/30 rounded-lg px-3 py-2">
                     <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Simulation Status */}
-            {isSimulating && (
-              <div className="flex justify-start">
-                <div className="flex gap-2 max-w-[85%]">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <FaRobot className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse" />
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Simulating conversation...</p>
-                    </div>
                   </div>
                 </div>
               </div>

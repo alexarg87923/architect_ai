@@ -20,10 +20,11 @@ class DatabaseService:
                 # Ensure user_id is provided for new conversations
                 if not conversation_state.user_id:
                     raise ValueError("user_id is required for new conversations")
-                    
+
                 db_conversation = Conversation(
                     session_id=conversation_state.session_id,
                     user_id=conversation_state.user_id,
+                    project_id=conversation_state.project_id,  # Link to project
                     current_phase=conversation_state.phase,
                     is_specification_complete=conversation_state.specifications_complete
                 )
@@ -31,11 +32,14 @@ class DatabaseService:
             else:
                 db_conversation.current_phase = conversation_state.phase
                 db_conversation.is_specification_complete = conversation_state.specifications_complete
+                # Update project_id if provided (in case user switches projects)
+                if conversation_state.project_id:
+                    db_conversation.project_id = conversation_state.project_id
                 db_conversation.updated_at = datetime.utcnow()
             
             # Save project specification if available
             if conversation_state.project_specification:
-                db_conversation.project_name = conversation_state.project_specification.title
+                db_conversation.project_name = conversation_state.project_specification.name
                 db_conversation.specifications = conversation_state.project_specification.dict()
             
             db.commit()
@@ -62,9 +66,9 @@ class DatabaseService:
             db_roadmap = db.query(RoadmapDB).filter(
                 RoadmapDB.conversation_id == conversation_id
             ).first()
-            
+
             roadmap_data = roadmap.dict()
-            
+
             if not db_roadmap:
                 db_roadmap = RoadmapDB(
                     conversation_id=conversation_id,
@@ -75,10 +79,26 @@ class DatabaseService:
             else:
                 db_roadmap.roadmap_data = roadmap_data
                 db_roadmap.updated_at = datetime.utcnow()
-            
+
+            # ALSO update the project's roadmap_data if this conversation is linked to a project
+            db_conversation = db.query(Conversation).filter(
+                Conversation.id == conversation_id
+            ).first()
+
+            if db_conversation and db_conversation.project_id:
+                from app.models.database import Project
+                db_project = db.query(Project).filter(
+                    Project.id == db_conversation.project_id
+                ).first()
+
+                if db_project:
+                    db_project.roadmap_data = roadmap_data
+                    db_project.updated_at = datetime.utcnow()
+                    print(f"✅ Updated project {db_project.id} with roadmap data")
+
             db.commit()
             return True
-            
+
         except Exception as e:
             db.rollback()
             print(f"Error saving roadmap: {e}")

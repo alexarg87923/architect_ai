@@ -13,6 +13,7 @@ class ConversationState(BaseModel):
     """Current state of the conversation with the agent"""
     session_id: str
     user_id: Optional[int] = None  # Associate conversation with user
+    project_id: Optional[int] = None  # Link conversation to a specific project
     phase: str = "discovery"  # discovery, confirmation, generation, subtask_generation, editing
     specifications_complete: bool = False
     project_specification: Optional[ProjectSpecification] = None

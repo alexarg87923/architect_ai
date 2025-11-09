@@ -73,38 +73,6 @@ class ApiClient {
     };
   }
 
-  // Simulation API Methods
-  async getProjectOptions() {
-    const response = await this.request('/api/simulation/project-options', {
-      method: 'GET',
-    });
-    
-    return {
-      success: response.success,
-      projectOptions: response.project_options
-    };
-  }
-
-  async runSimulation(projectId, projectType = 'codementor') {
-    const userId = localStorage.getItem('user_id');
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
-    const response = await this.request(`/api/simulation/run?user_id=${parseInt(userId)}&project_id=${projectId}&project_type=${projectType}`, {
-      method: 'POST',
-    });
-    
-    return {
-      success: response.success,
-      sessionId: response.session_id,
-      conversationState: response.conversation_state,
-      messages: response.messages,
-      roadmap: response.roadmap,
-      totalRounds: response.total_rounds
-    };
-  }
-
   async getConversation(sessionId) {
     const response = await this.request(`/api/agent/conversation/${sessionId}`);
     return {
